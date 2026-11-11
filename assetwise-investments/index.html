@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#04140e" />
+  <title>AssetWise Investments</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ============ SIGN IN / CREATE ACCOUNT ============ -->
+<section class="auth-gate" id="authGate" aria-label="AssetWise Investments account access">
+  <div class="auth-brand">
+    <img src="images/logo-mark.png" alt="" width="52" height="53">
+    <div class="logo-text"><b>Asset<span>Wise</span></b><small>Investments</small></div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-heading"><h1 id="authTitle">Welcome back</h1><p id="authSubtitle">Sign in to your AssetWise account.</p></div>
+    <div class="auth-tabs"><button type="button" class="selected" id="showLogin">Sign in</button><button type="button" id="showRegister">Create account</button></div>
+    <form id="loginForm" class="auth-form">
+      <label>Email address<input id="loginEmail" type="email" autocomplete="username" placeholder="you@example.com" required></label>
+      <label>Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required></label>
+      <button class="btn btn-gold full" type="submit">Sign in</button>
+    </form>
+    <form id="registerForm" class="auth-form" hidden>
+      <label>Full name<input id="registerName" type="text" autocomplete="name" placeholder="Your full name" required minlength="2" maxlength="120"></label>
+      <label>Email address<input id="registerEmail" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+      <label>Phone number <span class="opt">(optional)</span><input id="registerPhone" type="tel" autocomplete="tel" placeholder="07XX XXX XXX"></label>
+      <label>Password<input id="registerPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters" required minlength="8"></label>
+      <label>Referral code <span class="opt">(optional)</span><input id="registerRef" type="text" maxlength="12" placeholder="e.g. 9F3A12BC"></label>
+      <button class="btn btn-gold full" type="submit">Create account</button>
+    </form>
+    <p class="auth-message" id="authMessage" role="status" aria-live="polite"></p>
+  </div>
+  <p class="auth-footer">© 2026 AssetWise Investments</p>
+</section>
+
+<!-- ============ APP ============ -->
+<div class="app" id="appShell" hidden>
+  <header class="topbar">
+    <button class="menu-btn" id="mobileMenu" aria-label="Open menu"><svg class="ic" data-icon="menu"></svg></button>
+    <a class="logo" href="#" data-page="dashboard" aria-label="AssetWise Investments home">
+      <img src="images/logo-mark.png" alt="" width="52" height="53">
+      <span class="logo-text"><b>Asset<span>Wise</span></b><small>Investments</small></span>
+    </a>
+    <div class="tb-cell tb-user">
+      <span class="avatar" id="avatar">AW</span>
+      <div><small>Welcome back,</small><strong id="welcomeName">—</strong></div>
+      <svg class="ic chev" data-icon="chevron"></svg>
+    </div>
+    <div class="tb-cell tb-metric"><img src="images/icon-wallet.png" alt="" class="blend" width="40" height="40"><div><small>Account Balance</small><strong id="topBalance">—</strong></div></div>
+    <div class="tb-cell tb-metric tb-portfolio"><img src="images/icon-chart.png" alt="" class="blend" width="40" height="40"><div><small>Total Portfolio Value</small><strong id="topPortfolio">—</strong></div></div>
+    <div class="tb-cell tb-lang">
+      <label class="lang"><img src="images/flag-uk.png" alt="" width="26" height="21"><select id="langSelect" aria-label="Language"><option>EN</option></select><svg class="ic chev" data-icon="chevron"></svg></label>
+    </div>
+    <button class="bell" id="notifications" aria-label="Notifications"><svg class="ic" data-icon="bell"></svg><em id="bellCount" hidden>0</em></button>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav" id="mainNav">
+      <button class="nav-link active" data-page="dashboard"><svg class="ic" data-icon="home"></svg><span>Dashboard</span></button>
+      <button class="nav-link" data-page="investments"><svg class="ic" data-icon="chart"></svg><span>My Investments</span></button>
+      <button class="nav-link" data-page="deposit"><svg class="ic" data-icon="deposit"></svg><span>Deposit</span></button>
+      <button class="nav-link" data-page="withdraw"><svg class="ic" data-icon="withdraw"></svg><span>Withdraw</span></button>
+      <button class="nav-link" data-page="transactions"><svg class="ic" data-icon="history"></svg><span>Transaction History</span></button>
+      <button class="nav-link" data-page="referrals"><svg class="ic" data-icon="users"></svg><span>Referral Program</span></button>
+      <button class="nav-link" data-page="settings"><svg class="ic" data-icon="settings"></svg><span>Profile Settings</span></button>
+      <button class="nav-link" data-page="support"><svg class="ic" data-icon="support"></svg><span>Support</span><em class="pill-count" id="navSupportCount" hidden>0</em></button>
+      <button class="nav-link" id="logoutButton" type="button"><svg class="ic" data-icon="logout"></svg><span>Logout</span></button>
+    </nav>
+    <nav class="nav admin-nav" id="adminNav" hidden>
+      <div class="nav-caption">ADMINISTRATION</div>
+      <button class="nav-link" data-page="admin-overview"><svg class="ic" data-icon="shield"></svg><span>Overview</span></button>
+      <button class="nav-link" data-page="admin-support"><svg class="ic" data-icon="support"></svg><span>Customer Care</span><em class="pill-count" id="navAdminSupport" hidden>0</em></button>
+      <button class="nav-link" data-page="admin-payments"><svg class="ic" data-icon="payments"></svg><span>Deposits &amp; Withdrawals</span><em class="pill-count" id="navAdminPay" hidden>0</em></button>
+      <button class="nav-link" data-page="admin-users"><svg class="ic" data-icon="users"></svg><span>Customers</span></button>
+      <button class="nav-link" data-page="admin-packages"><svg class="ic" data-icon="box"></svg><span>Packages</span></button>
+    </nav>
+    <div class="secure-card">
+      <img src="images/icon-shield.png" alt="" class="blend" width="52" height="56">
+      <strong>Secure &amp; Compliant</strong>
+      <span>Your investments<br>our priority</span>
+      <div class="secure-map" aria-hidden="true"></div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <section class="page active" id="page-dashboard">
+      <div class="hero">
+        <div class="hero-art-left" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <h1>Grow Your Wealth <span>Globally</span></h1>
+          <p>Invest in asset-backed packages and enjoy<br>clear terms and transparent returns.</p>
+        </div>
+        <button class="btn btn-gold hero-btn" data-page="investments">Explore Packages <svg class="ic" data-icon="arrow"></svg></button>
+        <div class="hero-art-right" aria-hidden="true"></div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="col-left">
+          <div class="stat-row">
+            <article class="stat">
+              <img src="images/icon-coins.png" alt="" class="blend" width="42" height="44">
+              <div><small>Available Balance</small><strong id="statBalance">—</strong><button class="btn btn-gold btn-sm" data-page="deposit">Deposit</button></div>
+            </article>
+            <article class="stat">
+              <img src="images/icon-earnings.png" alt="" class="blend" width="46" height="44">
+              <div><small>Total Earnings</small><strong id="statEarnings">—</strong><span class="up" id="statEarningsPct">—</span></div>
+            </article>
+            <article class="stat">
+              <img src="images/icon-calendar.png" alt="" class="blend" width="44" height="44">
+              <div><small>Active Investments</small><strong id="statActive">—</strong><button class="link" data-page="investments">View All <svg class="ic" data-icon="arrow"></svg></button></div>
+            </article>
+          </div>
+          <div class="section-head"><h2>Investment Packages</h2><p>Choose the best package for your financial goals</p></div>
+          <div class="pkg-grid" id="dashboardPackages"></div>
+        </div>
+
+        <div class="col-right">
+          <article class="panel perf">
+            <div class="panel-head"><h2>Portfolio Performance</h2>
+              <select id="chartRange" class="select-sm"><option value="7">Last 7 Days</option><option value="30" selected>Last 30 Days</option><option value="90">Last 90 Days</option></select></div>
+            <div class="perf-pct" id="perfPct">+0.0%</div>
+            <div id="perfChart" class="chart"></div>
+          </article>
+          <article class="panel fund">
+            <h2>Fund Your Account</h2>
+            <p class="sub">Use USDT for quick and secure deposits</p>
+            <button class="fund-row" data-fund="usdt_trc20"><img src="images/icon-tron.png" alt="" class="blend" width="34" height="28"><span><b>USDT (TRC20)</b><small>TRON Network</small></span><svg class="ic" data-icon="arrow"></svg></button>
+            <button class="fund-row" data-fund="usdt_erc20"><img src="images/icon-eth.png" alt="" class="blend" width="28" height="30"><span><b>USDT (ERC20)</b><small>Ethereum Network</small></span><svg class="ic" data-icon="arrow"></svg></button>
+          </article>
+        </div>
+      </div>
+
+      <div class="bottom-grid">
+        <article class="panel">
+          <div class="panel-head"><h2>My Active Investments</h2><button class="link" data-page="investments">View All <svg class="ic" data-icon="arrow"></svg></button></div>
+          <div class="table-scroll"><table class="tbl"><thead><tr><th>Package</th><th>Amount</th><th>Current Value</th><th>Profit</th><th>Maturity Date</th><th>Status</th></tr></thead><tbody id="dashInvestments"></tbody></table></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><h2>Recent Transactions</h2><button class="link" data-page="transactions">View All <svg class="ic" data-icon="arrow"></svg></button></div>
+          <div id="recentTransactions" class="activity"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- MY INVESTMENTS -->
+    <section class="page" id="page-investments">
+      <div class="page-title"><div><h1>My Investments</h1><p>Choose a package and track every position.</p></div></div>
+      <div class="section-head"><h2>Investment Packages</h2><p>Returns are paid into your wallet when the term ends.</p></div>
+      <div class="pkg-grid pkg-grid-4" id="marketPackages"></div>
+      <div class="stat-row stat-row-3 gap-top">
+        <article class="stat"><div><small>Active Capital</small><strong id="invCapital">—</strong></div></article>
+        <article class="stat"><div><small>Current Value</small><strong id="invValue">—</strong></div></article>
+        <article class="stat"><div><small>Total Earnings</small><strong id="invEarnings">—</strong></div></article>
+      </div>
+      <article class="panel gap-top">
+        <div class="panel-head"><h2>All Positions</h2>
+          <select id="invFilter" class="select-sm"><option value="">All</option><option value="active">Active</option><option value="matured">Matured</option></select></div>
+        <div class="table-scroll"><table class="tbl"><thead><tr><th>Package</th><th>Started</th><th>Amount</th><th>Current Value</th><th>Profit</th><th>Maturity Date</th><th>Status</th></tr></thead><tbody id="invRows"></tbody></table></div>
+      </article>
+    </section>
+
+    <!-- DEPOSIT -->
+    <section class="page" id="page-deposit">
+      <div class="page-title"><div><h1>Deposit</h1><p>Add funds to your wallet. Your balance updates as soon as the payment is confirmed.</p></div></div>
+      <div class="two-col">
+        <article class="panel">
+          <div class="tabs" id="depositTabs">
+            <button class="selected" data-method="paystack">Pay online</button><button data-method="usdt_trc20">USDT · TRC20</button><button data-method="usdt_erc20">USDT · ERC20</button>
+          </div>
+          <div id="depositInstructions" class="instructions"></div>
+          <form id="depositForm" class="form">
+            <label>Amount<div class="amount-input"><span class="cur"></span><input id="depositAmount" type="text" inputmode="decimal" placeholder="0.00" required></div></label>
+            <label id="depositRefWrap"><span id="depositRefLabel">Transaction hash (TXID)</span><input id="depositRef" type="text" maxlength="120" autocomplete="off" required></label>
+            <button class="btn btn-gold full" type="submit" id="depositSubmit">Submit deposit</button>
+            <p class="hint" id="depositHint">Only submit a payment you have already made. Each code or hash can be used once.</p>
+          </form>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><h2>Your deposits</h2></div>
+          <div id="depositHistory" class="activity"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- WITHDRAW -->
+    <section class="page" id="page-withdraw">
+      <div class="page-title"><div><h1>Withdraw</h1><p>Move funds from your wallet to a USDT wallet.</p></div></div>
+      <div class="two-col">
+        <article class="panel">
+          <div class="balance-line"><small>Available to withdraw</small><strong id="withdrawBalance">—</strong></div>
+          <form id="withdrawForm" class="form">
+            <label>Withdraw to<select id="withdrawMethod"><option value="usdt_trc20">USDT · TRC20 (TRON)</option><option value="usdt_erc20">USDT · ERC20 (Ethereum)</option></select></label>
+            <label><span id="withdrawDestLabel">TRON (TRC20) wallet address</span><input id="withdrawDest" type="text" maxlength="120" autocomplete="off" placeholder="T..." required></label>
+            <label>Amount<div class="amount-input"><span class="cur"></span><input id="withdrawAmount" type="text" inputmode="decimal" placeholder="0.00" required></div></label>
+            <button class="btn btn-gold full" type="submit">Request withdrawal</button>
+            <p class="hint">The amount is reserved in your wallet while we process the request. If a request is declined it is returned to your wallet.</p>
+          </form>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><h2>Your withdrawals</h2></div>
+          <div id="withdrawHistory" class="activity"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section class="page" id="page-transactions">
+      <div class="page-title"><div><h1>Transaction History</h1><p>Deposits, withdrawals, investments and payouts.</p></div><button class="btn btn-outline" id="exportTransactions">Export CSV</button></div>
+      <article class="panel">
+        <div class="panel-head"><h2>All Transactions</h2>
+          <select class="select-sm" id="transactionFilter"><option value="">All</option><option value="deposit">Deposits</option><option value="withdrawal">Withdrawals</option><option value="investment">Investments</option><option value="payout">Payouts</option></select></div>
+        <div class="table-scroll"><table class="tbl"><thead><tr><th>Reference</th><th>Type</th><th>Date</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead><tbody id="transactionRows"></tbody></table></div>
+      </article>
+    </section>
+
+    <!-- REFERRALS -->
+    <section class="page" id="page-referrals">
+      <div class="page-title"><div><h1>Referral Program</h1><p>Invite friends to AssetWise with your personal link.</p></div></div>
+      <div class="two-col">
+        <article class="panel">
+          <h2>Your referral link</h2>
+          <div class="copy-box"><input id="refLink" readonly><button class="btn btn-gold btn-sm" id="copyRef">Copy</button></div>
+          <p class="hint">Your code: <b id="refCode">—</b></p>
+          <p class="hint">Friends who sign up with your link are listed here. Referral rewards are not enabled yet.</p>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><h2>People you referred</h2><span class="badge" id="refCount">0</span></div>
+          <div id="refList" class="activity"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <div class="page-title"><div><h1>Profile Settings</h1><p>Manage your details and password.</p></div></div>
+      <div class="two-col">
+        <article class="panel">
+          <h2>Personal information</h2>
+          <form id="settingsForm" class="form">
+            <label>Full name<input id="setName" type="text" required minlength="2" maxlength="120"></label>
+            <label>Email address<input id="setEmail" type="email" readonly></label>
+            <label>Phone number<input id="setPhone" type="tel" maxlength="30"></label>
+            <button class="btn btn-gold" type="submit">Save changes</button>
+          </form>
+        </article>
+        <article class="panel">
+          <h2>Change password</h2>
+          <form id="passwordForm" class="form">
+            <label>Current password<input id="pwCurrent" type="password" autocomplete="current-password" required></label>
+            <label>New password<input id="pwNew" type="password" autocomplete="new-password" minlength="8" required></label>
+            <button class="btn btn-gold" type="submit">Update password</button>
+          </form>
+        </article>
+      </div>
+    </section>
+
+    <!-- SUPPORT (customer) -->
+    <section class="page" id="page-support">
+      <div class="page-title"><div><h1>Customer Care</h1><p>Message our team. Replies appear here.</p></div></div>
+      <div class="two-col support-layout">
+        <article class="panel chat">
+          <div class="chat-head"><span class="avatar gold">AW</span><div><b>AssetWise Support</b><small>We reply as soon as we can</small></div></div>
+          <div class="chat-body" id="chatMessages"></div>
+          <form class="chat-form" id="chatForm"><input id="chatInput" placeholder="Type your message..." autocomplete="off" maxlength="2000"><button class="btn btn-gold" aria-label="Send message"><svg class="ic" data-icon="send"></svg></button></form>
+        </article>
+        <article class="panel">
+          <h2>Other ways to reach us</h2>
+          <div class="contact" id="contactInfo"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ADMIN: overview -->
+    <section class="page" id="page-admin-overview">
+      <div class="page-title"><div><h1>Admin Overview</h1><p>Platform activity at a glance.</p></div></div>
+      <div class="stat-row stat-row-4" id="adminStats"></div>
+    </section>
+
+    <!-- ADMIN: customer care inbox -->
+    <section class="page" id="page-admin-support">
+      <div class="page-title"><div><h1>Customer Care</h1><p>Reply to customer messages.</p></div></div>
+      <div class="inbox">
+        <article class="panel inbox-list"><div class="panel-head"><h2>Conversations</h2></div><div id="adminThreads"></div></article>
+        <article class="panel chat inbox-chat">
+          <div class="chat-head"><span class="avatar gold" id="adminChatAvatar">?</span><div><b id="adminChatName">Select a conversation</b><small id="adminChatMeta"></small></div></div>
+          <div class="chat-body" id="adminChatMessages"></div>
+          <form class="chat-form" id="adminChatForm"><input id="adminChatInput" placeholder="Write a reply..." autocomplete="off" maxlength="2000" disabled><button class="btn btn-gold" aria-label="Send reply" disabled><svg class="ic" data-icon="send"></svg></button></form>
+        </article>
+      </div>
+    </section>
+
+    <!-- ADMIN: payments -->
+    <section class="page" id="page-admin-payments">
+      <div class="page-title"><div><h1>Deposits &amp; Withdrawals</h1><p>Confirm payments received and pay out withdrawals.</p></div>
+        <select class="select-sm" id="adminTxFilter"><option value="pending">Pending</option><option value="">All statuses</option><option value="completed">Completed</option><option value="rejected">Rejected</option></select></div>
+      <article class="panel"><div class="table-scroll"><table class="tbl"><thead><tr><th>Customer</th><th>Type</th><th>Amount</th><th>Method</th><th>Reference / destination</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="adminTxRows"></tbody></table></div></article>
+    </section>
+
+    <!-- ADMIN: users -->
+    <section class="page" id="page-admin-users">
+      <div class="page-title"><div><h1>Customers</h1><p>All registered accounts.</p></div><input class="search" id="adminUserSearch" placeholder="Search name or email"></div>
+      <article class="panel"><div class="table-scroll"><table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Wallet</th><th>Invested</th><th>Joined</th><th>Status</th><th></th></tr></thead><tbody id="adminUserRows"></tbody></table></div></article>
+    </section>
+
+    <!-- ADMIN: packages -->
+    <section class="page" id="page-admin-packages">
+      <div class="page-title"><div><h1>Packages</h1><p>Change terms, limits and returns. Existing investments keep the terms they were bought on.</p></div></div>
+      <article class="panel"><div class="table-scroll"><table class="tbl"><thead><tr><th>Package</th><th>Minimum</th><th>Maximum</th><th>Days</th><th>Return %</th><th>Active</th><th></th></tr></thead><tbody id="adminPkgRows"></tbody></table></div></article>
+    </section>
+
+    <footer class="footer">© 2026 AssetWise Investments</footer>
+  </main>
+</div>
+
+<!-- INVEST MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-top"><h2 id="modalTitle">Invest</h2><button class="modal-close" id="modalClose" aria-label="Close">×</button></div>
+    <form id="investForm" class="form">
+      <div class="invest-summary" id="investSummary"></div>
+      <label>Amount<div class="amount-input"><span class="cur"></span><input id="investAmount" type="text" inputmode="decimal" placeholder="0.00" required></div></label>
+      <div class="invest-preview" id="investPreview"></div>
+      <button class="btn btn-gold full" type="submit" id="investSubmit">Confirm investment</button>
+    </form>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>
