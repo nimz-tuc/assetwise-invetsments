@@ -3,7 +3,7 @@
   const TOKEN_KEY = 'assetwise_token';
     // Using a separate front-end tunnel (Live Server on 5500)? Put your BACKEND tunnel address here.
   // Leave it '' when you open the site from the backend address itself.
-  const API_OVERRIDE = 'https://shell-asus-trout-paso.trycloudflare.com';
+  const API_OVERRIDE = '';
   const API_BASE = API_OVERRIDE ? API_OVERRIDE.replace(/\/$/, '') + '/api'
     : location.port === '5500' ? `http://${location.hostname}:5000/api` : '/api';
   const AW = window.AW = {
