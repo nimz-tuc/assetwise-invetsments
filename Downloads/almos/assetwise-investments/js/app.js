@@ -366,3 +366,48 @@
   };
   AW.stop = () => { Object.values(AW.timers).forEach(t => clearInterval(t)); summary = null; packages = []; currentPage = 'dashboard'; };
 })();
+paypal.Buttons({
+
+  createOrder() {
+    return fetch(
+      '/api/deposits/paypal/create-order',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization:
+            'Bearer ' + AW.getToken()
+        },
+        body: JSON.stringify({
+          amount: 500
+        })
+      }
+    )
+    .then(r => r.json())
+    .then(data => {
+      window.txId = data.transactionId;
+      return data.orderID;
+    });
+  },
+
+  onApprove(data) {
+
+    return fetch(
+      '/api/deposits/paypal/capture-order',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization:
+            'Bearer ' + AW.getToken()
+        },
+        body: JSON.stringify({
+          orderID: data.orderID,
+          transactionId: window.txId
+        })
+      }
+    );
+
+  }
+
+}).render('#paypal-button-container');

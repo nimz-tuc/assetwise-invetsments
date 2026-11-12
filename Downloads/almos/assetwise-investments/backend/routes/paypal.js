@@ -1,30 +1,20 @@
 const crypto = require('crypto');
 const express = require('express');
 const { authenticate } = require('../lib/auth');
-const { tx } = require('../lib/db');
+const { db, tx } = require('../lib/db');
 const L = require('../services/ledger');
 const paypal = require('../services/paypal');
 
 const router = express.Router();
-
 router.use(authenticate);
 
 router.post('/deposits/paypal/create-order', async (req, res) => {
 
   const amount = Number(req.body.amount);
 
-  if (!amount || amount <= 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid amount'
-    });
-  }
-
   const reference =
     'AWPP' +
-    crypto.randomBytes(8)
-      .toString('hex')
-      .toUpperCase();
+    crypto.randomBytes(8).toString('hex').toUpperCase();
 
   const deposit = await tx(client =>
     L.insertTx(client, {
@@ -48,21 +38,21 @@ router.post('/deposits/paypal/create-order', async (req, res) => {
     orderID: order.id,
     transactionId: deposit.id
   });
-
 });
 
 router.post('/deposits/paypal/capture-order', async (req, res) => {
 
   const { orderID, transactionId } = req.body;
 
-  const result =
-    await paypal.captureOrder(orderID);
+  const result = await paypal.captureOrder(orderID);
 
   if (result.status !== 'COMPLETED') {
-    return res.status(400).json({
-      success: false,
-      message: 'Payment not completed'
-    });
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: 'Payment not completed'
+      });
   }
 
   await tx(async client => {
@@ -78,10 +68,8 @@ router.post('/deposits/paypal/capture-order', async (req, res) => {
   });
 
   res.json({
-    success: true,
-    message: 'Wallet credited successfully'
+    success: true
   });
-
 });
 
 module.exports = router;

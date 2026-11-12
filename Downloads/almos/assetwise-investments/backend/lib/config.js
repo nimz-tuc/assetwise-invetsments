@@ -26,7 +26,7 @@ module.exports = {
   paypal: {
     clientId: process.env.PAYPAL_CLIENT_ID,
     clientSecret: process.env.PAYPAL_CLIENT_SECRET,
-    mode: process.env.PAYPAL_MODE || 'sandbox' // 'sandbox' or 'live'
+    mode: process.env.PAYPAL_MODE || 'live' // 'sandbox' or 'live'
   },
 
   // Crypto / USDT & USDC (TRC20) Configuration
