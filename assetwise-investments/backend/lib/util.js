@@ -25,7 +25,8 @@ function normalizeKenyanPhone(p) {
 function validateDestination(method, value) {
   const v = String(value || '').trim();
   if (method === 'usdt_trc20') return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(v) ? v : null;
-  if (method === 'usdt_erc20') return /^0x[0-9a-fA-F]{40}$/.test(v) ? v : null;
+  if (method === 'usdc_erc20' || method === 'usdt_erc20') return /^0x[0-9a-fA-F]{40}$/.test(v) ? v : null;
+  if (method === 'paypal') return v.length <= 120 && /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]{2,}$/.test(v) ? v.toLowerCase() : null; // the customer's PayPal email
   return null;
 }
 
@@ -45,6 +46,9 @@ function rateLimit({ windowMs, max, keyFn, message = 'Too many attempts. Please 
   };
 }
 
-const METHODS = ['usdt_trc20', 'usdt_erc20'];
+// Crypto the customer sends by hand (then submits the transaction hash). usdt_erc20 is gone: USDC replaces it.
+const METHODS = ['usdt_trc20', 'usdc_erc20'];
+// Ways to get money out: the crypto above, plus PayPal (paid out manually by an admin, like the crypto ones).
+const WITHDRAW_METHODS = [...METHODS, 'paypal'];
 
-module.exports = { HttpError, parseAmount, publicRef, normalizeKenyanPhone, validateDestination, rateLimit, METHODS };
+module.exports = { HttpError, parseAmount, publicRef, normalizeKenyanPhone, validateDestination, rateLimit, METHODS, WITHDRAW_METHODS };

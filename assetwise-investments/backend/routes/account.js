@@ -2,7 +2,7 @@ const express = require('express');
 const { db, tx } = require('../lib/db');
 const { authenticate } = require('../lib/auth');
 const cfg = require('../lib/config');
-const { HttpError, parseAmount, validateDestination, rateLimit, METHODS } = require('../lib/util');
+const { HttpError, parseAmount, validateDestination, rateLimit, METHODS, WITHDRAW_METHODS } = require('../lib/util');
 const L = require('../services/ledger');
 
 const router = express.Router();
@@ -147,11 +147,11 @@ router.post('/deposits', rateLimit({ windowMs: 60_000, max: 10, keyFn: r => Stri
 router.post('/withdrawals', rateLimit({ windowMs: 60_000, max: 5, keyFn: r => String(r.user?.id) }), async (req, res) => {
   const method = req.body?.method;
   const amount = parseAmount(req.body?.amount);
-  if (!METHODS.includes(method)) throw new HttpError(400, 'Choose a withdrawal method.');
+  if (!WITHDRAW_METHODS.includes(method)) throw new HttpError(400, 'Choose a withdrawal method.');
   if (!amount) throw new HttpError(400, 'Enter a valid amount.');
   if (Number(amount) < cfg.MIN_WITHDRAWAL) throw new HttpError(400, `Minimum withdrawal is ${cfg.CURRENCY} ${cfg.MIN_WITHDRAWAL.toLocaleString('en-US')}.`);
   const destination = validateDestination(method, req.body?.destination);
-  if (!destination) throw new HttpError(400, 'Enter a valid wallet address for that network.');
+  if (!destination) throw new HttpError(400, method === 'paypal' ? 'Enter a valid PayPal email address.' : 'Enter a valid wallet address for that network.');
   const t = await tx(async client => {
     await L.debit(client, req.user.id, amount);
     return L.insertTx(client, {

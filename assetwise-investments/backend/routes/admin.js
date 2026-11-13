@@ -5,6 +5,7 @@ const cfg = require('../lib/config');
 const { HttpError, parseAmount } = require('../lib/util');
 const L = require('../services/ledger');
 const paystack = require('../services/paystack');
+const paypal = require('../services/paypal');
 
 const router = express.Router();
 router.use(authenticate, requireAdmin);
@@ -74,11 +75,16 @@ router.get('/transactions', async (req, res) => {
 
 router.post('/transactions/:id/approve', async (req, res) => {
   const note = req.body?.note ? String(req.body.note).trim().slice(0, 200) : null;
-  const pre = (await db.query(`SELECT type, method, reference FROM transactions WHERE id = $1`, [req.params.id])).rows[0];
+  const pre = (await db.query(`SELECT type, method, reference, provider_ref FROM transactions WHERE id = $1`, [req.params.id])).rows[0];
   if (pre && pre.type === 'deposit' && pre.method === 'paystack') {
     // Online payments are only credited once Paystack itself confirms them.
     const r = await paystack.settle(pre.reference);
     return res.json({ success: r.status === 'completed', message: r.status === 'completed' ? 'Paystack confirmed the payment and the wallet was credited.' : `Paystack has not confirmed this payment (status: ${r.status}).` });
+  }
+  if (pre && pre.type === 'deposit' && pre.method === 'paypal') {
+    // PayPal deposits are only credited once PayPal itself confirms them.
+    const r = await paypal.settle(pre.provider_ref);
+    return res.json({ success: r.status === 'completed', message: r.status === 'completed' ? 'PayPal confirmed the payment and the wallet was credited.' : `PayPal has not confirmed this payment (status: ${r.status}).` });
   }
   const done = await tx(async client => {
     const r = await client.query(`SELECT * FROM transactions WHERE id = $1 FOR UPDATE`, [req.params.id]);

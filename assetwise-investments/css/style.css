@@ -310,3 +310,8 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   .stat strong{font-size:23px}
   .chat{height:70vh}
 }
+
+/* PayPal */
+.btn-paypal{background:#ffc439;color:#111;box-shadow:0 1px 0 #fff6 inset,0 6px 14px #0006;font-weight:700}
+.btn-paypal:hover:not([disabled]){filter:brightness(.96)}
+.pp-badge{flex:none;width:34px;text-align:center;font:italic 800 11px/1.1 Arial,sans-serif;color:#fff;background:#003087;border-radius:6px;padding:7px 0}

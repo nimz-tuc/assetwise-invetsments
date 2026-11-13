@@ -131,9 +131,10 @@
           </article>
           <article class="panel fund">
             <h2>Fund Your Account</h2>
-            <p class="sub">Use USDT for quick and secure deposits</p>
+            <p class="sub">Use PayPal, USDT or USDC for quick and secure deposits</p>
+            <button class="fund-row" data-fund="paypal"><span class="pp-badge" aria-hidden="true">PayPal</span><span><b>PayPal</b><small>Pay with your PayPal account</small></span><svg class="ic" data-icon="arrow"></svg></button>
             <button class="fund-row" data-fund="usdt_trc20"><img src="images/icon-tron.png" alt="" class="blend" width="34" height="28"><span><b>USDT (TRC20)</b><small>TRON Network</small></span><svg class="ic" data-icon="arrow"></svg></button>
-            <button class="fund-row" data-fund="usdt_erc20"><img src="images/icon-eth.png" alt="" class="blend" width="28" height="30"><span><b>USDT (ERC20)</b><small>Ethereum Network</small></span><svg class="ic" data-icon="arrow"></svg></button>
+            <button class="fund-row" data-fund="usdc_erc20"><img src="images/icon-eth.png" alt="" class="blend" width="28" height="30"><span><b>USDC (ERC20)</b><small>Ethereum Network</small></span><svg class="ic" data-icon="arrow"></svg></button>
           </article>
         </div>
       </div>
@@ -173,7 +174,7 @@
       <div class="two-col">
         <article class="panel">
           <div class="tabs" id="depositTabs">
-            <button class="selected" data-method="paystack">Pay online</button><button data-method="usdt_trc20">USDT · TRC20</button><button data-method="usdt_erc20">USDT · ERC20</button>
+            <button class="selected" data-method="paypal">Pay online</button><button data-method="usdt_trc20">USDT · TRC20</button><button data-method="usdc_erc20">USDC · ERC20</button>
           </div>
           <div id="depositInstructions" class="instructions"></div>
           <form id="depositForm" class="form">
@@ -192,16 +193,16 @@
 
     <!-- WITHDRAW -->
     <section class="page" id="page-withdraw">
-      <div class="page-title"><div><h1>Withdraw</h1><p>Move funds from your wallet to a USDT wallet.</p></div></div>
+      <div class="page-title"><div><h1>Withdraw</h1><p>Move funds from your wallet to your PayPal account or a crypto wallet.</p></div></div>
       <div class="two-col">
         <article class="panel">
           <div class="balance-line"><small>Available to withdraw</small><strong id="withdrawBalance">—</strong></div>
           <form id="withdrawForm" class="form">
-            <label>Withdraw to<select id="withdrawMethod"><option value="usdt_trc20">USDT · TRC20 (TRON)</option><option value="usdt_erc20">USDT · ERC20 (Ethereum)</option></select></label>
+            <label>Withdraw to<select id="withdrawMethod"><option value="paypal">PayPal</option><option value="usdt_trc20">USDT · TRC20 (TRON)</option><option value="usdc_erc20">USDC · ERC20 (Ethereum)</option></select></label>
             <label><span id="withdrawDestLabel">TRON (TRC20) wallet address</span><input id="withdrawDest" type="text" maxlength="120" autocomplete="off" placeholder="T..." required></label>
             <label>Amount<div class="amount-input"><span class="cur"></span><input id="withdrawAmount" type="text" inputmode="decimal" placeholder="0.00" required></div></label>
             <button class="btn btn-gold full" type="submit">Request withdrawal</button>
-            <p class="hint">The amount is reserved in your wallet while we process the request. If a request is declined it is returned to your wallet.</p>
+            <p class="hint" id="withdrawHint">The amount is reserved in your wallet while we process the request. If a request is declined it is returned to your wallet.</p>
           </form>
         </article>
         <article class="panel">

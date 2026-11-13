@@ -10,6 +10,7 @@
     "migrate": "node scripts/migrate.js",
     "make-admin": "node scripts/make-admin.js"
   },
+  "engines": { "node": ">=20" },
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",

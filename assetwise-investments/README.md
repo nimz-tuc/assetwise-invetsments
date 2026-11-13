@@ -22,6 +22,16 @@
 5. To go live: activate your Paystack account, replace the key with `sk_live_...`, and test with a small amount first.
 Withdrawals are still paid out by an admin (Mark paid). Paystack payouts can be added later.
 
+## PayPal (deposits and withdrawals, USD)
+1. developer.paypal.com > Apps & Credentials: copy the Client ID and Secret (Sandbox tab to test, Live tab for real money).
+2. Set `PAYPAL_ENV` (`sandbox` or `live`, must match the keys), `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `PUBLIC_URL` (in `.env` locally, in the Render Environment tab online).
+3. Deposit > **PayPal** > Pay with PayPal: the customer approves on PayPal, returns to the site, and the server captures the payment, checks amount/currency, and credits the wallet exactly once.
+4. Optional webhook (backup if the customer closes the tab after paying): create one in the PayPal app with URL `https://YOUR-DOMAIN/api/webhooks/paypal` and events *Checkout order approved* + *Payment capture completed*, then set `PAYPAL_WEBHOOK_ID`.
+5. Withdraw > PayPal: the customer gives their PayPal email, the amount is reserved, and an admin pays it from PayPal and clicks **Mark paid** (or **Reject** to refund the wallet).
+
+## Crypto
+Deposits/withdrawals: USDT (TRC20) and USDC (ERC20). Set `USDT_TRC20_ADDRESS` and `USDC_ERC20_ADDRESS`.
+
 ## Opening the site on a phone / other devices
 You only need **one** tunnel, to port 5000 (the server serves both the website and the API). Don't use VS Code Live Server for this.
 1. Start the server: `cd backend` then `node server.js`.

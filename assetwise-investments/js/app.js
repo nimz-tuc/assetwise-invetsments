@@ -5,6 +5,8 @@
   const chatSeen = new Set(); let chatLast = 0;
   // Paystack sends the customer back to the site with ?reference=... after they pay.
   const returnRef = (() => { const q = new URLSearchParams(location.search); return q.get('reference') || q.get('trxref') || ''; })();
+  // PayPal sends the customer back with ?pp=return&token=ORDER_ID (or ?pp=cancel if they backed out).
+  const paypalReturn = (() => { const q = new URLSearchParams(location.search); return q.get('pp') ? { state: q.get('pp'), order: q.get('token') || '' } : null; })();
 
   const rate = r => String(Number(r));
   const amountOf = v => String(v || '').replace(/[,\s]/g, '');
@@ -171,18 +173,24 @@
     $('#depositRefLabel').textContent = 'Transaction hash (TXID)';
     $('#depositRef').placeholder = 'Paste the transaction hash';
     let ready = true;
-    $('#depositRefWrap').hidden = m === 'paystack'; $('#depositRef').required = m !== 'paystack';
-    $('#depositSubmit').textContent = m === 'paystack' ? 'Continue to secure payment' : 'Submit deposit';
-    $('#depositHint').textContent = m === 'paystack' ? 'You will be taken to Paystack to pay by card, then returned here. Your wallet is credited automatically.' : 'Only submit a payment you have already made. Each hash can be used once.';
+    const online = m === 'paystack' || m === 'paypal';
+    $('#depositRefWrap').hidden = online; $('#depositRef').required = !online;
+    $('#depositSubmit').textContent = m === 'paypal' ? 'Pay with PayPal' : m === 'paystack' ? 'Continue to secure payment' : 'Submit deposit';
+    $('#depositSubmit').classList.toggle('btn-paypal', m === 'paypal'); $('#depositSubmit').classList.toggle('btn-gold', m !== 'paypal');
+    $('#depositHint').textContent = m === 'paypal' ? 'You will be taken to PayPal to pay, then returned here. Your wallet is credited automatically.'
+      : m === 'paystack' ? 'You will be taken to Paystack to pay by card, then returned here. Your wallet is credited automatically.' : 'Only submit a payment you have already made. Each hash can be used once.';
     $('#depositHint').textContent += ` Deposits: ${AW.currency} ${AW.num(AW.cfg.min_deposit)} – ${AW.currency} ${AW.num(AW.cfg.max_deposit)}.`;
     if (m === 'paystack') {
       if (!AW.cfg.paystack.enabled) { ready = false; box.innerHTML = '<div class="warn">Online payments are not set up yet. Use another method or contact support.</div>'; }
       else box.innerHTML = '<div class="grow"><b>Pay instantly by card</b><ol><li>Enter the amount below and continue.</li><li>On the secure Paystack page, enter your card details.</li><li>You return here and your wallet is credited automatically.</li></ol></div>';
+    } else if (m === 'paypal') {
+      if (!AW.cfg.paypal.enabled) { ready = false; box.innerHTML = '<div class="warn">PayPal payments are not set up yet. Use another method or contact support.</div>'; }
+      else box.innerHTML = '<div class="grow"><b>Pay with your PayPal account</b><ol><li>Enter the amount below and click Pay with PayPal.</li><li>Log in to PayPal (or pay by card as a PayPal guest if offered) and approve the payment.</li><li>You return here and your wallet is credited automatically.</li></ol></div>';
     } else {
-      const addr = pay[m].address, net = m === 'usdt_trc20' ? 'TRON (TRC20)' : 'Ethereum (ERC20)';
-      if (!addr) { ready = false; box.innerHTML = `<div class="warn">The ${esc(net)} deposit address has not been set up yet. Please contact support before sending any money.</div>`; }
+      const addr = pay[m].address, net = m === 'usdt_trc20' ? 'TRON (TRC20)' : 'Ethereum (ERC20)', coin = m === 'usdt_trc20' ? 'USDT' : 'USDC';
+      if (!addr) { ready = false; box.innerHTML = `<div class="warn">The ${esc(coin)} (${esc(net)}) deposit address has not been set up yet. Please contact support before sending any money.</div>`; }
       else {
-        box.innerHTML = `<div class="grow"><b>Send USDT on the ${esc(net)} network only</b>
+        box.innerHTML = `<div class="grow"><b>Send ${esc(coin)} on the ${esc(net)} network only</b>
           <div class="addr"><code>${esc(addr)}</code><button type="button" class="btn btn-outline btn-sm" id="copyAddr">Copy</button></div>
           <p class="hint">Sending on any other network can result in permanent loss of funds. After sending, paste the transaction hash below.</p></div>`;
         $('#copyAddr').addEventListener('click', () => AW.copy(addr, 'Address copied.'));
@@ -206,6 +214,11 @@
           if (!/^https:\/\//.test(p.authorization_url)) throw new Error('Unexpected response from the payment provider.');
           location.href = p.authorization_url; return;
         }
+        if (depositMethod === 'paypal') {
+          const p = await api('/deposits/paypal', { method: 'POST', body: { amount: amountOf($('#depositAmount').value) } });
+          if (!/^https:\/\/([a-z0-9-]+\.)*paypal\.com\//i.test(p.approve_url)) throw new Error('Unexpected response from the payment provider.');
+          location.href = p.approve_url; return;
+        }
         const r = await api('/deposits', { method: 'POST', body: { method: depositMethod, amount: amountOf($('#depositAmount').value), reference: $('#depositRef').value.trim() } });
         AW.toast(r.message); $('#depositAmount').value = ''; $('#depositRef').value = ''; loadDeposit(); refreshSummary();
       } catch (err) { AW.toast(err.message, true); }
@@ -215,8 +228,11 @@
   /* ---------------- withdraw ---------------- */
   function renderWithdrawForm() {
     const m = $('#withdrawMethod').value;
-    $('#withdrawDestLabel').textContent = m === 'usdt_trc20' ? 'TRON (TRC20) wallet address' : 'Ethereum (ERC20) wallet address';
-    $('#withdrawDest').placeholder = m === 'usdt_trc20' ? 'T...' : '0x...';
+    $('#withdrawDestLabel').textContent = m === 'paypal' ? 'PayPal email address' : m === 'usdt_trc20' ? 'TRON (TRC20) wallet address' : 'Ethereum (ERC20) wallet address (USDC)';
+    $('#withdrawDest').placeholder = m === 'paypal' ? 'you@example.com' : m === 'usdt_trc20' ? 'T...' : '0x...';
+    $('#withdrawDest').type = m === 'paypal' ? 'email' : 'text'; $('#withdrawDest').inputMode = m === 'paypal' ? 'email' : 'text';
+    $('#withdrawHint').textContent = m === 'paypal' ? 'Use the email of the PayPal account that should receive the money. Double-check it: payments to a wrong address cannot be recovered. The amount is reserved in your wallet while we process the request; if declined it is returned.'
+      : 'The amount is reserved in your wallet while we process the request. If a request is declined it is returned to your wallet.';
   }
   AW.loaders.withdraw = async () => {
     renderWithdrawForm();
@@ -349,6 +365,20 @@
     } catch (e) { AW.toast(e.message, true); }
   }
 
+  async function handlePaypalReturn({ state, order }) {
+    history.replaceState({}, '', location.pathname); // tidy the address bar
+    if (state === 'cancel') { AW.toast('PayPal payment cancelled. You have not been charged.'); return; }
+    if (!/^[A-Za-z0-9]{10,40}$/.test(order)) return;
+    try {
+      let r = await api('/deposits/paypal/capture', { method: 'POST', body: { order_id: order } });
+      for (let i = 0; i < 3 && r.status === 'pending'; i++) { await new Promise(ok => setTimeout(ok, 3000)); r = await api('/deposits/paypal/capture', { method: 'POST', body: { order_id: order } }); }
+      if (r.status === 'completed') AW.toast('Payment received. Your wallet has been credited.');
+      else if (r.status === 'pending') AW.toast('We have not received confirmation yet. Your wallet updates automatically once PayPal confirms.');
+      else AW.toast('That payment was not completed.', true);
+      refreshSummary(); if (currentPage === 'deposit') loadDeposit();
+    } catch (e) { AW.toast(e.message, true); }
+  }
+
   /* ---------------- start / stop ---------------- */
   AW.start = async user => {
     AW.user = user;
@@ -357,9 +387,10 @@
     $$('.cur').forEach(s => s.textContent = AW.currency);
     AW.applyUser(user);
     $('#adminNav').hidden = user.role !== 'admin';
-    depositMethod = AW.cfg.paystack.enabled ? 'paystack' : 'usdt_trc20';
+    depositMethod = AW.cfg.paypal.enabled ? 'paypal' : 'usdt_trc20';
     showPage('dashboard');
     if (returnRef) handlePaymentReturn(returnRef);
+    if (paypalReturn) handlePaypalReturn(paypalReturn);
     clearInterval(AW.timers.badges); AW.timers.badges = setInterval(() => pollBadges().catch(() => {}), 15000);
     pollBadges().catch(() => {});
   };

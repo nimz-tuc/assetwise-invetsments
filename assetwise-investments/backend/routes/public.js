@@ -14,9 +14,10 @@ router.get('/config', (req, res) => {
     brand: cfg.BRAND, currency: cfg.CURRENCY, support_email: cfg.SUPPORT_EMAIL,
     min_deposit: cfg.MIN_DEPOSIT, max_deposit: cfg.MAX_DEPOSIT, min_withdrawal: cfg.MIN_WITHDRAWAL,
     paystack: { enabled: !!cfg.PAYSTACK_SECRET_KEY },
+    paypal: { enabled: !!(cfg.PAYPAL_CLIENT_ID && cfg.PAYPAL_CLIENT_SECRET) },
     pay: {
       usdt_trc20: { address: cfg.PAY.usdt_trc20 },
-      usdt_erc20: { address: cfg.PAY.usdt_erc20 },
+      usdc_erc20: { address: cfg.PAY.usdc_erc20 },
     },
   });
 });

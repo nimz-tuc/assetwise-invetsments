@@ -44,7 +44,7 @@
   };
   AW.time = v => new Date(v).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   AW.initials = (name = '') => name.trim().split(/\s+/).slice(0, 2).map(p => p[0] || '').join('').toUpperCase() || 'AW';
-  AW.METHOD = { paystack: 'Card (Paystack)', mpesa: 'M-Pesa', usdt_trc20: 'USDT (TRC20)', usdt_erc20: 'USDT (ERC20)', wallet: 'Wallet' };
+  AW.METHOD = { paystack: 'Card (Paystack)', paypal: 'PayPal', mpesa: 'M-Pesa', usdt_trc20: 'USDT (TRC20)', usdc_erc20: 'USDC (ERC20)', usdt_erc20: 'USDT (ERC20)', wallet: 'Wallet' };
 
   AW.toast = (message, isError = false) => {
     const el = $('#toast'); el.textContent = message; el.classList.toggle('error', isError); el.classList.add('show');

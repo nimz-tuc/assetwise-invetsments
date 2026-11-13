@@ -21,9 +21,16 @@ module.exports = {
   PAYSTACK_BASE_URL: (process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co').replace(/\/$/, ''),
   PUBLIC_URL_SET: !!process.env.PUBLIC_URL,
   PUBLIC_URL: (process.env.PUBLIC_URL || `http://localhost:${num(process.env.PORT, 5000)}`).replace(/\/$/, ''),
-  // Where customers send money. Shown on the Deposit screen. Leave blank until you have them.
+  // PayPal (Orders API v2). Credentials go ONLY in .env locally / the Render Environment tab, never in code or chat.
+  // PAYPAL_ENV: 'sandbox' (test money) or 'live'. PAYPAL_WEBHOOK_ID is optional (extra safety net, see README).
+  PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID || '',
+  PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET || '',
+  PAYPAL_ENV: (process.env.PAYPAL_ENV || 'sandbox').toLowerCase() === 'live' ? 'live' : 'sandbox',
+  PAYPAL_BASE_URL: (process.env.PAYPAL_ENV || 'sandbox').toLowerCase() === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com',
+  PAYPAL_WEBHOOK_ID: process.env.PAYPAL_WEBHOOK_ID || '',
+  // Where customers send crypto. Shown on the Deposit screen. Leave blank until you have them.
   PAY: {
     usdt_trc20: process.env.USDT_TRC20_ADDRESS || '',
-    usdt_erc20: process.env.USDT_ERC20_ADDRESS || '',
+    usdc_erc20: process.env.USDC_ERC20_ADDRESS || '',
   },
 };

@@ -5,6 +5,7 @@ const cors = require('cors');
 const { db } = require('./lib/db');
 const { matureDueInvestments } = require('./services/ledger');
 const { expireStalePayments } = require('./services/paystack');
+const { expireStalePayments: expireStalePaypal } = require('./services/paypal');
 
 if (!cfg.JWT_SECRET || cfg.JWT_SECRET.length < 32) {
   console.error('JWT_SECRET is missing or too short (use at least 32 random characters). Refusing to start.');
@@ -37,6 +38,7 @@ app.use('/api', (req, res, next) => { res.set('Cache-Control', 'no-store'); next
 app.use('/api', require('./routes/public'));
 app.use('/api', require('./routes/auth'));
 app.use('/api', require('./routes/paystack'));
+app.use('/api', require('./routes/paypal')); // must stay above ./routes/account, which requires login on every path after it
 app.use('/api', require('./routes/account'));
 app.use('/api/support', require('./routes/support'));
 app.use('/api/admin', require('./routes/admin'));
@@ -61,7 +63,7 @@ app.use((err, req, res, next) => {
 require('./scripts/migrate').run(db).then(() => {
   console.log('Database connected and up to date.');
   const runMaturity = () => matureDueInvestments().then(n => n && console.log(`Paid out ${n} matured investment(s).`)).catch(e => console.error('Maturity job failed:', e.message));
-  const runExpiry = () => expireStalePayments().catch(e => console.error('Payment expiry job failed:', e.message));
+  const runExpiry = () => Promise.all([expireStalePayments(), expireStalePaypal()]).catch(e => console.error('Payment expiry job failed:', e.message));
   runMaturity(); runExpiry();
   setInterval(() => { runMaturity(); runExpiry(); }, 60_000).unref();
   app.listen(cfg.PORT, '0.0.0.0', () => console.log(`${cfg.BRAND} running on http://localhost:${cfg.PORT}`));
