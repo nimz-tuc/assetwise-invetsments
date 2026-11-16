@@ -69,7 +69,7 @@ router.get('/performance', async (req, res) => {
 
 /* ---------- Transactions ---------- */
 router.get('/transactions', async (req, res) => {
-  const type = ['deposit', 'withdrawal', 'investment', 'payout'].includes(req.query.type) ? req.query.type : null;
+  const type = ['deposit', 'withdrawal', 'investment', 'payout', 'adjustment'].includes(req.query.type) ? req.query.type : null;
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 500);
   const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
   const r = await db.query(
@@ -166,7 +166,8 @@ router.post('/withdrawals', rateLimit({ windowMs: 60_000, max: 5, keyFn: r => St
 router.get('/referrals', async (req, res) => {
   const r = await db.query(
     `SELECT split_part(full_name, ' ', 1) AS first_name, created_at FROM users WHERE referred_by = $1 ORDER BY created_at DESC LIMIT 200`, [req.user.id]);
-  res.json({ success: true, code: req.user.referral_code, referred: r.rows, count: r.rowCount });
+  const b = await db.query(`SELECT COALESCE(SUM(amount),0) AS total FROM transactions WHERE user_id = $1 AND type = 'adjustment' AND method = 'referral' AND status = 'completed'`, [req.user.id]);
+  res.json({ success: true, code: req.user.referral_code, referred: r.rows, count: r.rowCount, bonus_total: Number(b.rows[0].total), percent: cfg.REFERRAL_PERCENT });
 });
 
 /* ---------- Notifications (bell) ---------- */

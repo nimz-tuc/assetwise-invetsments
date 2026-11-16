@@ -83,15 +83,51 @@
     const [d, w] = await Promise.all([api('/admin/transactions?type=deposit' + q), api('/admin/transactions?type=withdrawal' + q)]);
     const rows = [...d.transactions, ...w.transactions].sort((a, b) => (b.status === 'pending') - (a.status === 'pending') || new Date(b.created_at) - new Date(a.created_at));
     $('#adminTxRows').innerHTML = rows.length ? rows.map(t => {
-      const detail = t.type === 'deposit' ? t.reference : t.destination;
+      const detail = t.type === 'deposit' ? esc(t.reference || '') : `${esc(t.destination || '')}${t.provider_ref ? `<br><small class="hint">Ref: ${esc(t.provider_ref)}</small>` : ''}`;
       return `<tr><td>${esc(t.full_name)}<br><small class="hint">${esc(t.email)}${t.phone ? ' · ' + esc(t.phone) : ''}</small></td><td>${esc(t.type)}</td>
-        <td class="${Number(t.amount) > 0 ? 'positive' : 'negative'}">${money(Math.abs(t.amount))}</td><td>${esc(AW.METHOD[t.method] || '')}</td><td><code>${esc(detail || '')}</code></td>
+        <td class="${Number(t.amount) > 0 ? 'positive' : 'negative'}">${money(Math.abs(t.amount))}</td><td>${esc(AW.METHOD[t.method] || '')}</td><td><code>${detail || ''}</code></td>
         <td>${esc(AW.dateTime(t.created_at))}</td><td>${badge(t.status)}</td>
-        <td>${t.status === 'pending' ? `<button class="btn btn-gold btn-sm" data-act="approve" data-id="${esc(t.id)}">${t.type === 'deposit' ? 'Confirm' : 'Mark paid'}</button> <button class="btn btn-danger btn-sm" data-act="reject" data-id="${esc(t.id)}">Reject</button>` : ''}</td></tr>`;
+        <td>${t.status === 'pending' ? `${t.type === 'withdrawal' ? `<button class="btn btn-outline btn-sm" data-act="edit" data-id="${esc(t.id)}">Edit</button> ` : ''}<button class="btn btn-gold btn-sm" data-act="approve" data-id="${esc(t.id)}">${t.type === 'deposit' ? 'Confirm' : 'Mark paid'}</button> <button class="btn btn-danger btn-sm" data-act="reject" data-id="${esc(t.id)}">Reject</button>` : ''}</td></tr>`;
     }).join('') : `<tr><td colspan="8" class="empty">Nothing to show.</td></tr>`;
     rows.forEach(t => { /* keep for confirm dialogs */ payCache[t.id] = t; });
   }
   const payCache = {};
+  let editingTx = null;
+  const editBackdrop = $('#adminTxEditBackdrop');
+  const closeTxEdit = () => { editBackdrop.classList.remove('show'); editingTx = null; };
+  $('#adminTxEditClose').addEventListener('click', closeTxEdit);
+  editBackdrop.addEventListener('click', e => { if (e.target === editBackdrop) closeTxEdit(); });
+  function editWithdrawal(t) {
+    editingTx = t;
+    $('#adminTxEditAmount').value = Math.abs(Number(t.amount)).toFixed(2);
+    $('#adminTxEditMethod').value = t.method || 'paypal';
+    $('#adminTxEditDestination').value = t.destination || '';
+    $('#adminTxEditReference').value = t.provider_ref || '';
+    editBackdrop.classList.add('show');
+    $('#adminTxEditAmount').focus();
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && editBackdrop.classList.contains('show')) closeTxEdit(); });
+  $('#adminTxEditForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!editingTx) return;
+    const button = $('#adminTxEditSave');
+    button.disabled = true;
+    try {
+      await api(`/admin/transactions/${encodeURIComponent(editingTx.id)}`, {
+        method: 'PUT',
+        body: {
+          amount: $('#adminTxEditAmount').value.trim(),
+          method: $('#adminTxEditMethod').value,
+          destination: $('#adminTxEditDestination').value.trim(),
+          provider_ref: $('#adminTxEditReference').value.trim(),
+        },
+      });
+      closeTxEdit();
+      AW.toast('Withdrawal updated.');
+      loadPayments().catch(err => AW.toast(err.message, true));
+    } catch (err) { AW.toast(err.message, true); }
+    finally { button.disabled = false; }
+  });
   AW.loaders['admin-payments'] = loadPayments;
   $('#adminTxFilter').addEventListener('change', () => loadPayments().catch(e => AW.toast(e.message, true)));
   $('#adminTxRows').addEventListener('click', async e => {
@@ -99,12 +135,15 @@
     const t = payCache[b.dataset.id]; if (!t) return;
     const amt = money(Math.abs(t.amount));
     try {
-      if (b.dataset.act === 'approve') {
+      if (b.dataset.act === 'edit') {
+        editWithdrawal(t);
+        return;
+      } else if (b.dataset.act === 'approve') {
         const msg = t.type === 'deposit' ? `Confirm that ${amt} was received from ${t.full_name} (${AW.METHOD[t.method]} ref ${t.reference})?\n\nTheir wallet will be credited immediately.`
           : `Confirm you have paid ${amt} to ${t.destination} (${AW.METHOD[t.method]})?`;
         if (!confirm(msg)) return;
-        const note = t.type === 'withdrawal' ? prompt('Payout reference (optional):') : null;
-        AW.toast((await api(`/admin/transactions/${t.id}/approve`, { method: 'POST', body: { note } })).message);
+        const providerRef = t.type === 'withdrawal' ? prompt('Payout reference (optional):') : null;
+        AW.toast((await api(`/admin/transactions/${t.id}/approve`, { method: 'POST', body: { provider_ref: providerRef } })).message);
       } else {
         const reason = prompt(`Reject this ${t.type} of ${amt}? Enter a reason for the customer's record:`, '');
         if (reason === null) return;

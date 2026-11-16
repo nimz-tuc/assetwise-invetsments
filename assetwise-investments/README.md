@@ -9,7 +9,7 @@
 
 ## How money moves (all real, nothing simulated)
 - **Deposit**: customer sends USDT to your address and submits the transaction hash. It stays *pending* until an admin confirms it (Admin > Deposits & Withdrawals). The same code can never be credited twice. The Daraja callback will call the same `confirmDeposit()` in `backend/services/ledger.js`.
-- **Withdraw**: amount is taken from the wallet immediately and held. Admin marks it paid, or rejects it and the money returns to the wallet.
+- **Withdraw**: amount is taken from the wallet immediately and held. While pending, an admin can edit its amount, method, payout reference, and destination; amount changes are reconciled against the wallet. Admin marks it paid, or rejects it and the reserved amount returns to the wallet.
 - **Invest**: debits the wallet, locks the package terms. When the term ends the server pays principal + return into the wallet automatically (checked every minute).
 - **Customer care**: customers write in Support; admins reply in Admin > Customer Care; replies show in the customer's chat within seconds and on the bell.
 - Admin actions are recorded in the `audit_log` table.

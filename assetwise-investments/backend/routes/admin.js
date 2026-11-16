@@ -2,7 +2,7 @@ const express = require('express');
 const { db, tx } = require('../lib/db');
 const { authenticate, requireAdmin } = require('../lib/auth');
 const cfg = require('../lib/config');
-const { HttpError, parseAmount } = require('../lib/util');
+const { HttpError, parseAmount, validateDestination, WITHDRAW_METHODS } = require('../lib/util');
 const L = require('../services/ledger');
 const paystack = require('../services/paystack');
 const paypal = require('../services/paypal');
@@ -65,7 +65,7 @@ router.get('/transactions', async (req, res) => {
   const type = ['deposit', 'withdrawal', 'investment', 'payout'].includes(req.query.type) ? req.query.type : null;
   const status = ['pending', 'completed', 'rejected', 'failed'].includes(req.query.status) ? req.query.status : null;
   const r = await db.query(
-    `SELECT t.id, t.public_ref, t.type, t.amount, t.currency, t.status, t.method, t.reference, t.destination, t.note,
+    `SELECT t.id, t.public_ref, t.type, t.amount, t.currency, t.status, t.method, t.reference, t.destination, t.provider_ref, t.note,
             t.created_at, t.reviewed_at, u.full_name, u.email, u.phone
      FROM transactions t JOIN users u ON u.id = t.user_id
      WHERE ($1::text IS NULL OR t.type = $1) AND ($2::text IS NULL OR t.status = $2)
@@ -73,8 +73,49 @@ router.get('/transactions', async (req, res) => {
   res.json({ success: true, transactions: r.rows });
 });
 
+router.put('/transactions/:id', async (req, res) => {
+  const b = req.body || {};
+  const amount = parseAmount(b.amount);
+  const method = b.method;
+  const destination = validateDestination(method, b.destination);
+  const providerRef = String(b.provider_ref || '').trim();
+  if (!WITHDRAW_METHODS.includes(method)) throw new HttpError(400, 'Choose a valid withdrawal method.');
+  if (!amount || Number(amount) < cfg.MIN_WITHDRAWAL) throw new HttpError(400, `Withdrawal amount must be at least ${cfg.CURRENCY} ${cfg.MIN_WITHDRAWAL.toLocaleString('en-US')}.`);
+  if (!destination) throw new HttpError(400, method === 'paypal' ? 'Enter a valid PayPal email address.' : 'Enter a valid wallet address for that network.');
+  if (providerRef.length > 120) throw new HttpError(400, 'The payout reference can be up to 120 characters.');
+
+  const updated = await tx(async client => {
+    const r = await client.query(`SELECT * FROM transactions WHERE id = $1 FOR UPDATE`, [req.params.id]);
+    const t = r.rows[0];
+    if (!t) throw new HttpError(404, 'Transaction not found.');
+    if (t.type !== 'withdrawal') throw new HttpError(400, 'Only withdrawals can be edited.');
+    if (t.status !== 'pending') throw new HttpError(409, 'Only pending withdrawals can be edited.');
+
+    const oldAmountCents = Math.round(Math.abs(Number(t.amount)) * 100);
+    const newAmountCents = Math.round(Number(amount) * 100);
+    const amountDelta = newAmountCents - oldAmountCents;
+    if (amountDelta > 0) await L.debit(client, t.user_id, (amountDelta / 100).toFixed(2));
+    else if (amountDelta < 0) await L.credit(client, t.user_id, (-amountDelta / 100).toFixed(2));
+
+    const result = await client.query(
+      `UPDATE transactions
+       SET amount = $2, method = $3, destination = $4, provider_ref = $5, updated_at = now()
+       WHERE id = $1 RETURNING *`,
+      [t.id, `-${amount}`, method, destination, providerRef || null]);
+    await L.audit(client, req.user.id, 'withdrawal.update', 'transaction', t.id, {
+      amount: { from: t.amount, to: `-${amount}` },
+      method: { from: t.method, to: method },
+      destination: { from: t.destination, to: destination },
+      provider_ref: { from: t.provider_ref, to: providerRef || null },
+    });
+    return result.rows[0];
+  });
+  res.json({ success: true, transaction: updated, message: 'Withdrawal updated.' });
+});
+
 router.post('/transactions/:id/approve', async (req, res) => {
-  const note = req.body?.note ? String(req.body.note).trim().slice(0, 200) : null;
+  const payoutRef = String(req.body?.provider_ref ?? req.body?.note ?? '').trim() || null;
+  if (payoutRef && payoutRef.length > 120) throw new HttpError(400, 'The payout reference can be up to 120 characters.');
   const pre = (await db.query(`SELECT type, method, reference, provider_ref FROM transactions WHERE id = $1`, [req.params.id])).rows[0];
   if (pre && pre.type === 'deposit' && pre.method === 'paystack') {
     // Online payments are only credited once Paystack itself confirms them.
@@ -97,9 +138,9 @@ router.post('/transactions/:id/approve', async (req, res) => {
       // Money has already left the wallet when the request was made; approving records that it was paid out.
       await client.query(
         `UPDATE transactions SET status = 'completed', reviewed_by = $2, reviewed_at = now(), updated_at = now(),
-                provider_ref = COALESCE($3, provider_ref), note = 'Paid out' WHERE id = $1`, [t.id, req.user.id, note]);
+                provider_ref = COALESCE($3, provider_ref), note = 'Paid out' WHERE id = $1`, [t.id, req.user.id, payoutRef]);
     } else throw new HttpError(400, 'Only deposits and withdrawals can be reviewed.');
-    await L.audit(client, req.user.id, `${t.type}.approve`, 'transaction', t.id, { amount: t.amount, user_id: t.user_id, note });
+    await L.audit(client, req.user.id, `${t.type}.approve`, 'transaction', t.id, { amount: t.amount, user_id: t.user_id, note: payoutRef });
     return t;
   });
   res.json({ success: true, message: done.type === 'deposit' ? 'Deposit confirmed and wallet credited.' : 'Withdrawal marked as paid.' });

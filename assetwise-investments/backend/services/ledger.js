@@ -1,5 +1,5 @@
 const { db, tx } = require('../lib/db');
-const { CURRENCY } = require('../lib/config');
+const { CURRENCY, REFERRAL_PERCENT } = require('../lib/config');
 const { HttpError, publicRef } = require('../lib/util');
 
 /** SQL fragment: profit earned so far on an investment, accrued evenly over its term. */
@@ -83,6 +83,18 @@ async function matureDueInvestments() {
           investment_id: inv.id, note: `${inv.package_name} matured (principal + return)`,
         });
         await client.query(`UPDATE investments SET status = 'matured', paid_at = now() WHERE id = $1`, [inv.id]);
+        // Referral bonus: a % of the profit goes to whoever referred this customer. Same transaction as the payout, so it can only happen once.
+        if (REFERRAL_PERCENT > 0) {
+          const ref = await client.query(`SELECT r.id FROM users u JOIN users r ON r.id = u.referred_by WHERE u.id = $1 AND r.status = 'active'`, [inv.user_id]);
+          const bonus = (Math.round(Number(inv.expected_profit) * REFERRAL_PERCENT) / 100).toFixed(2);
+          if (ref.rows[0] && Number(bonus) > 0) {
+            await credit(client, ref.rows[0].id, bonus);
+            await insertTx(client, {
+              user_id: ref.rows[0].id, type: 'adjustment', amount: bonus, status: 'completed', method: 'referral',
+              investment_id: inv.id, note: `Referral bonus (${REFERRAL_PERCENT}% of a referred customer's profit)`,
+            });
+          }
+        }
       }
       return due.rowCount;
     });

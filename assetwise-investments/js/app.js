@@ -273,6 +273,7 @@
   AW.loaders.referrals = async () => {
     const r = await api('/referrals');
     $('#refCode').textContent = r.code; $('#refLink').value = `${location.origin}/?ref=${r.code}`; $('#refCount').textContent = r.count;
+    $('#refTerms').textContent = `You earn ${r.percent}% of the profit each friend you refer earns. The bonus is added to your wallet when their investment matures.`; $('#refEarned').textContent = money(r.bonus_total);
     $('#refList').innerHTML = r.referred.length ? r.referred.map(p => `<div class="act"><span class="avatar gold">${esc(AW.initials(p.first_name))}</span><div class="act-copy"><b>${esc(p.first_name)}</b><small>Joined ${esc(AW.date(p.created_at))}</small></div></div>`).join('') : emptyAct('Nobody has joined with your link yet.');
   };
   $('#copyRef').addEventListener('click', () => AW.copy($('#refLink').value, 'Referral link copied.'));

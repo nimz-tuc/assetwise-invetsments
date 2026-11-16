@@ -217,7 +217,7 @@
       <div class="page-title"><div><h1>Transaction History</h1><p>Deposits, withdrawals, investments and payouts.</p></div><button class="btn btn-outline" id="exportTransactions">Export CSV</button></div>
       <article class="panel">
         <div class="panel-head"><h2>All Transactions</h2>
-          <select class="select-sm" id="transactionFilter"><option value="">All</option><option value="deposit">Deposits</option><option value="withdrawal">Withdrawals</option><option value="investment">Investments</option><option value="payout">Payouts</option></select></div>
+          <select class="select-sm" id="transactionFilter"><option value="">All</option><option value="deposit">Deposits</option><option value="withdrawal">Withdrawals</option><option value="investment">Investments</option><option value="payout">Payouts</option><option value="adjustment">Referral bonuses</option></select></div>
         <div class="table-scroll"><table class="tbl"><thead><tr><th>Reference</th><th>Type</th><th>Date</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead><tbody id="transactionRows"></tbody></table></div>
       </article>
     </section>
@@ -230,7 +230,8 @@
           <h2>Your referral link</h2>
           <div class="copy-box"><input id="refLink" readonly><button class="btn btn-gold btn-sm" id="copyRef">Copy</button></div>
           <p class="hint">Your code: <b id="refCode">—</b></p>
-          <p class="hint">Friends who sign up with your link are listed here. Referral rewards are not enabled yet.</p>
+          <p class="hint" id="refTerms">Friends who sign up with your link are listed here.</p>
+          <p class="hint">Referral bonus earned so far: <b id="refEarned">—</b></p>
         </article>
         <article class="panel">
           <div class="panel-head"><h2>People you referred</h2><span class="badge" id="refCount">0</span></div>
@@ -304,6 +305,20 @@
         <select class="select-sm" id="adminTxFilter"><option value="pending">Pending</option><option value="">All statuses</option><option value="completed">Completed</option><option value="rejected">Rejected</option></select></div>
       <article class="panel"><div class="table-scroll"><table class="tbl"><thead><tr><th>Customer</th><th>Type</th><th>Amount</th><th>Method</th><th>Reference / destination</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="adminTxRows"></tbody></table></div></article>
     </section>
+
+    <div class="modal-backdrop" id="adminTxEditBackdrop">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="adminTxEditTitle">
+        <div class="modal-top"><h2 id="adminTxEditTitle">Edit withdrawal</h2><button class="modal-close" id="adminTxEditClose" aria-label="Close">×</button></div>
+        <p class="sub">Changes apply only while the withdrawal is pending. Adjusting the amount updates the customer's reserved wallet balance.</p>
+        <form id="adminTxEditForm" class="form">
+          <label>Amount<div class="amount-input"><span class="cur"></span><input id="adminTxEditAmount" type="text" inputmode="decimal" required></div></label>
+          <label>Payment method<select id="adminTxEditMethod" required><option value="paypal">PayPal</option><option value="usdt_trc20">USDT · TRC20</option><option value="usdc_erc20">USDC · ERC20</option></select></label>
+          <label>Withdrawal destination<input id="adminTxEditDestination" type="text" maxlength="120" required></label>
+          <label>Payout reference (optional)<input id="adminTxEditReference" type="text" maxlength="120"></label>
+          <button class="btn btn-gold full" id="adminTxEditSave" type="submit">Save changes</button>
+        </form>
+      </div>
+    </div>
 
     <!-- ADMIN: users -->
     <section class="page" id="page-admin-users">

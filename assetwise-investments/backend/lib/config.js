@@ -12,6 +12,8 @@ module.exports = {
   MIN_DEPOSIT: num(process.env.MIN_DEPOSIT, 500),
   MAX_DEPOSIT: num(process.env.MAX_DEPOSIT, 50000),
   MIN_WITHDRAWAL: num(process.env.MIN_WITHDRAWAL, 100),
+  // Referral bonus: this % of the profit a referred customer earns, paid to whoever referred them when their investment matures.
+  REFERRAL_PERCENT: num(process.env.REFERRAL_PERCENT, 2),
   MAX_AMOUNT: 10000000,
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || '',
   CORS_ORIGINS: (process.env.CORS_ORIGINS || 'http://127.0.0.1:5500,http://localhost:5500').split(',').map(s => s.trim()).filter(Boolean),
