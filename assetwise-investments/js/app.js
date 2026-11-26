@@ -34,7 +34,9 @@
     const inv = e.target.closest('[data-invest]');
     if (inv) openInvest(inv.dataset.invest);
     const fund = e.target.closest('[data-fund]');
-    if (fund) { depositMethod = fund.dataset.fund; showPage('deposit'); }
+    if (fund) requestCryptoAddress(fund.dataset.fund).catch(err => AW.toast(err.message, true));
+    const request = e.target.closest('[data-deposit-request]');
+    if (request) requestCryptoAddress(request.dataset.depositRequest, request).catch(err => AW.toast(err.message, true));
   });
   $('#mobileMenu').addEventListener('click', () => { $('#sidebar').classList.toggle('open'); $('#scrim').classList.toggle('show'); });
   $('#scrim').addEventListener('click', closeSidebar);
@@ -168,35 +170,30 @@
 
   /* ---------------- deposit ---------------- */
   function renderDeposit() {
-    $$('#depositTabs button').forEach(b => b.classList.toggle('selected', b.dataset.method === depositMethod));
-    const pay = AW.cfg.pay, box = $('#depositInstructions'), m = depositMethod;
+    $('#depositMethod').value = depositMethod;
     $('#depositRefLabel').textContent = 'Transaction hash (TXID)';
     $('#depositRef').placeholder = 'Paste the transaction hash';
-    let ready = true;
-    const online = m === 'paystack' || m === 'paypal';
-    $('#depositRefWrap').hidden = online; $('#depositRef').required = !online;
-    $('#depositSubmit').textContent = m === 'paypal' ? 'Pay with PayPal' : m === 'paystack' ? 'Continue to secure payment' : 'Submit deposit';
-    $('#depositSubmit').classList.toggle('btn-paypal', m === 'paypal'); $('#depositSubmit').classList.toggle('btn-gold', m !== 'paypal');
-    $('#depositHint').textContent = m === 'paypal' ? 'You will be taken to PayPal to pay, then returned here. Your wallet is credited automatically.'
-      : m === 'paystack' ? 'You will be taken to Paystack to pay by card, then returned here. Your wallet is credited automatically.' : 'Only submit a payment you have already made. Each hash can be used once.';
-    $('#depositHint').textContent += ` Deposits: ${AW.currency} ${AW.num(AW.cfg.min_deposit)} – ${AW.currency} ${AW.num(AW.cfg.max_deposit)}.`;
-    if (m === 'paystack') {
-      if (!AW.cfg.paystack.enabled) { ready = false; box.innerHTML = '<div class="warn">Online payments are not set up yet. Use another method or contact support.</div>'; }
-      else box.innerHTML = '<div class="grow"><b>Pay instantly by card</b><ol><li>Enter the amount below and continue.</li><li>On the secure Paystack page, enter your card details.</li><li>You return here and your wallet is credited automatically.</li></ol></div>';
-    } else if (m === 'paypal') {
-      if (!AW.cfg.paypal.enabled) { ready = false; box.innerHTML = '<div class="warn">PayPal payments are not set up yet. Use another method or contact support.</div>'; }
-      else box.innerHTML = '<div class="grow"><b>Pay with your PayPal account</b><ol><li>Enter the amount below and click Pay with PayPal.</li><li>Log in to PayPal (or pay by card as a PayPal guest if offered) and approve the payment.</li><li>You return here and your wallet is credited automatically.</li></ol></div>';
-    } else {
-      const addr = pay[m].address, net = m === 'usdt_trc20' ? 'TRON (TRC20)' : 'Ethereum (ERC20)', coin = m === 'usdt_trc20' ? 'USDT' : 'USDC';
-      if (!addr) { ready = false; box.innerHTML = `<div class="warn">The ${esc(coin)} (${esc(net)}) deposit address has not been set up yet. Please contact support before sending any money.</div>`; }
-      else {
-        box.innerHTML = `<div class="grow"><b>Send ${esc(coin)} on the ${esc(net)} network only</b>
-          <div class="addr"><code>${esc(addr)}</code><button type="button" class="btn btn-outline btn-sm" id="copyAddr">Copy</button></div>
-          <p class="hint">Sending on any other network can result in permanent loss of funds. After sending, paste the transaction hash below.</p></div>`;
-        $('#copyAddr').addEventListener('click', () => AW.copy(addr, 'Address copied.'));
-      }
+    $('#depositRefWrap').hidden = false;
+    $('#depositRef').required = true;
+    $('#depositSubmit').textContent = 'Submit deposit';
+    $('#depositHint').textContent = `Only submit a payment you have already made. Each transaction hash can be used once. Deposits: ${AW.currency} ${AW.num(AW.cfg.min_deposit)} – ${AW.currency} ${AW.num(AW.cfg.max_deposit)}.`;
+    $('#depositSubmit').disabled = false;
+  }
+  $('#depositMethod').addEventListener('change', e => { depositMethod = e.target.value; });
+  async function requestCryptoAddress(method, button) {
+    if (!['usdt_trc20', 'usdc_erc20'].includes(method)) throw new Error('Choose a supported cryptocurrency.');
+    if (AW.user?.role === 'admin') throw new Error('Use a customer account to request deposit instructions.');
+    const network = method === 'usdt_trc20' ? 'TRON (TRC20)' : 'Ethereum (ERC20)';
+    const coin = method === 'usdt_trc20' ? 'USDT' : 'USDC';
+    if (button) button.disabled = true;
+    try {
+      await api('/support/messages', { method: 'POST', body: { body: `I would like to make a ${coin} deposit on the ${network} network. Please provide the correct wallet address and deposit instructions.` } });
+      depositMethod = method;
+      showPage('support');
+      AW.toast(`Your ${coin} wallet-address request was sent to customer care.`);
+    } finally {
+      if (button) button.disabled = false;
     }
-    $('#depositForm button[type=submit]').disabled = !ready;
   }
   async function loadDeposit() {
     renderDeposit();
@@ -204,21 +201,10 @@
     $('#depositHistory').innerHTML = r.transactions.length ? r.transactions.map(txRow).join('') : emptyAct('Your deposits will appear here.');
   }
   AW.loaders.deposit = loadDeposit;
-  $('#depositTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { depositMethod = b.dataset.method; renderDeposit(); } });
   $('#depositForm').addEventListener('submit', async e => {
     e.preventDefault();
     await busy($('#depositForm button[type=submit]'), async () => {
       try {
-        if (depositMethod === 'paystack') {
-          const p = await api('/deposits/paystack', { method: 'POST', body: { amount: amountOf($('#depositAmount').value) } });
-          if (!/^https:\/\//.test(p.authorization_url)) throw new Error('Unexpected response from the payment provider.');
-          location.href = p.authorization_url; return;
-        }
-        if (depositMethod === 'paypal') {
-          const p = await api('/deposits/paypal', { method: 'POST', body: { amount: amountOf($('#depositAmount').value) } });
-          if (!/^https:\/\/([a-z0-9-]+\.)*paypal\.com\//i.test(p.approve_url)) throw new Error('Unexpected response from the payment provider.');
-          location.href = p.approve_url; return;
-        }
         const r = await api('/deposits', { method: 'POST', body: { method: depositMethod, amount: amountOf($('#depositAmount').value), reference: $('#depositRef').value.trim() } });
         AW.toast(r.message); $('#depositAmount').value = ''; $('#depositRef').value = ''; loadDeposit(); refreshSummary();
       } catch (err) { AW.toast(err.message, true); }
@@ -388,7 +374,7 @@
     $$('.cur').forEach(s => s.textContent = AW.currency);
     AW.applyUser(user);
     $('#adminNav').hidden = user.role !== 'admin';
-    depositMethod = AW.cfg.paypal.enabled ? 'paypal' : 'usdt_trc20';
+    depositMethod = 'usdt_trc20';
     showPage('dashboard');
     if (returnRef) handlePaymentReturn(returnRef);
     if (paypalReturn) handlePaypalReturn(paypalReturn);

@@ -2,7 +2,7 @@ const express = require('express');
 const { db, tx } = require('../lib/db');
 const { authenticate, requireAdmin } = require('../lib/auth');
 const cfg = require('../lib/config');
-const { HttpError, parseAmount, validateDestination, WITHDRAW_METHODS } = require('../lib/util');
+const { HttpError, parseAmount, validateDestination, METHODS, WITHDRAW_METHODS } = require('../lib/util');
 const L = require('../services/ledger');
 const paystack = require('../services/paystack');
 const paypal = require('../services/paypal');
@@ -111,6 +111,41 @@ router.put('/transactions/:id', async (req, res) => {
     return result.rows[0];
   });
   res.json({ success: true, transaction: updated, message: 'Withdrawal updated.' });
+});
+
+router.patch('/transactions/:id', async (req, res) => {
+  const amount = parseAmount(req.body?.amount);
+  const method = req.body?.method;
+  const reference = String(req.body?.reference || '').trim();
+  if (!amount) throw new HttpError(400, 'Enter a valid deposit amount.');
+  if (Number(amount) < cfg.MIN_DEPOSIT) throw new HttpError(400, `Minimum deposit is ${cfg.CURRENCY} ${cfg.MIN_DEPOSIT.toLocaleString('en-US')}.`);
+  if (Number(amount) > cfg.MAX_DEPOSIT) throw new HttpError(400, `Maximum deposit is ${cfg.CURRENCY} ${cfg.MAX_DEPOSIT.toLocaleString('en-US')}.`);
+  if (!METHODS.includes(method)) throw new HttpError(400, 'Choose a supported crypto network.');
+  if (!/^[A-Za-z0-9]{6,120}$/.test(reference)) throw new HttpError(400, 'Enter a valid transaction hash.');
+
+  try {
+    const updated = await tx(async client => {
+      const r = await client.query(`SELECT * FROM transactions WHERE id = $1 FOR UPDATE`, [req.params.id]);
+      const t = r.rows[0];
+      if (!t) throw new HttpError(404, 'Transaction not found.');
+      if (t.type !== 'deposit' || t.status !== 'pending' || !METHODS.includes(t.method)) {
+        throw new HttpError(409, 'Only pending crypto deposits can be edited.');
+      }
+      const result = await client.query(
+        `UPDATE transactions SET amount = $2, method = $3, reference = $4, updated_at = now()
+         WHERE id = $1 RETURNING id, amount, method, reference, status`,
+        [t.id, amount, method, reference]);
+      await L.audit(client, req.user.id, 'deposit.edit', 'transaction', t.id, {
+        before: { amount: t.amount, method: t.method, reference: t.reference },
+        after: { amount, method, reference },
+      });
+      return result.rows[0];
+    });
+    res.json({ success: true, message: 'Pending deposit updated.', transaction: updated });
+  } catch (e) {
+    if (e.code === '23505') throw new HttpError(409, 'That payment reference has already been submitted.');
+    throw e;
+  }
 });
 
 router.post('/transactions/:id/approve', async (req, res) => {

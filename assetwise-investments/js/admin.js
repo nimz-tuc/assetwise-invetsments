@@ -87,7 +87,7 @@
       return `<tr><td>${esc(t.full_name)}<br><small class="hint">${esc(t.email)}${t.phone ? ' · ' + esc(t.phone) : ''}</small></td><td>${esc(t.type)}</td>
         <td class="${Number(t.amount) > 0 ? 'positive' : 'negative'}">${money(Math.abs(t.amount))}</td><td>${esc(AW.METHOD[t.method] || '')}</td><td><code>${detail || ''}</code></td>
         <td>${esc(AW.dateTime(t.created_at))}</td><td>${badge(t.status)}</td>
-        <td>${t.status === 'pending' ? `${t.type === 'withdrawal' ? `<button class="btn btn-outline btn-sm" data-act="edit" data-id="${esc(t.id)}">Edit</button> ` : ''}<button class="btn btn-gold btn-sm" data-act="approve" data-id="${esc(t.id)}">${t.type === 'deposit' ? 'Confirm' : 'Mark paid'}</button> <button class="btn btn-danger btn-sm" data-act="reject" data-id="${esc(t.id)}">Reject</button>` : ''}</td></tr>`;
+        <td>${t.status === 'pending' ? `${t.type === 'withdrawal' || (t.type === 'deposit' && ['usdt_trc20', 'usdc_erc20'].includes(t.method)) ? `<button class="btn btn-outline btn-sm" data-act="edit" data-id="${esc(t.id)}">Edit</button> ` : ''}<button class="btn btn-gold btn-sm" data-act="approve" data-id="${esc(t.id)}">${t.type === 'deposit' ? 'Confirm' : 'Mark paid'}</button> <button class="btn btn-danger btn-sm" data-act="reject" data-id="${esc(t.id)}">Reject</button>` : ''}</td></tr>`;
     }).join('') : `<tr><td colspan="8" class="empty">Nothing to show.</td></tr>`;
     rows.forEach(t => { /* keep for confirm dialogs */ payCache[t.id] = t; });
   }
@@ -136,8 +136,17 @@
     const amt = money(Math.abs(t.amount));
     try {
       if (b.dataset.act === 'edit') {
-        editWithdrawal(t);
-        return;
+        if (t.type === 'withdrawal') {
+          editWithdrawal(t);
+          return;
+        }
+        const amount = prompt(`Deposit amount (${AW.currency}):`, Number(t.amount).toFixed(2));
+        if (amount === null) return;
+        const method = prompt('Network (usdt_trc20 or usdc_erc20):', t.method);
+        if (method === null) return;
+        const reference = prompt('Transaction hash (TXID):', t.reference || '');
+        if (reference === null) return;
+        AW.toast((await api(`/admin/transactions/${t.id}`, { method: 'PATCH', body: { amount: amount.trim(), method: method.trim(), reference: reference.trim() } })).message);
       } else if (b.dataset.act === 'approve') {
         const msg = t.type === 'deposit' ? `Confirm that ${amt} was received from ${t.full_name} (${AW.METHOD[t.method]} ref ${t.reference})?\n\nTheir wallet will be credited immediately.`
           : `Confirm you have paid ${amt} to ${t.destination} (${AW.METHOD[t.method]})?`;

@@ -30,9 +30,4 @@ module.exports = {
   PAYPAL_ENV: (process.env.PAYPAL_ENV || 'sandbox').toLowerCase() === 'live' ? 'live' : 'sandbox',
   PAYPAL_BASE_URL: (process.env.PAYPAL_ENV || 'sandbox').toLowerCase() === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com',
   PAYPAL_WEBHOOK_ID: process.env.PAYPAL_WEBHOOK_ID || '',
-  // Where customers send crypto. Shown on the Deposit screen. Leave blank until you have them.
-  PAY: {
-    usdt_trc20: process.env.USDT_TRC20_ADDRESS || '',
-    usdc_erc20: process.env.USDC_ERC20_ADDRESS || '',
-  },
 };

@@ -131,8 +131,7 @@
           </article>
           <article class="panel fund">
             <h2>Fund Your Account</h2>
-            <p class="sub">Use PayPal, USDT or USDC for quick and secure deposits</p>
-            <button class="fund-row" data-fund="paypal"><span class="pp-badge" aria-hidden="true">PayPal</span><span><b>PayPal</b><small>Pay with your PayPal account</small></span><svg class="ic" data-icon="arrow"></svg></button>
+            <p class="sub">Request a crypto wallet address from customer care before sending funds.</p>
             <button class="fund-row" data-fund="usdt_trc20"><img src="images/icon-tron.png" alt="" class="blend" width="34" height="28"><span><b>USDT (TRC20)</b><small>TRON Network</small></span><svg class="ic" data-icon="arrow"></svg></button>
             <button class="fund-row" data-fund="usdc_erc20"><img src="images/icon-eth.png" alt="" class="blend" width="28" height="30"><span><b>USDC (ERC20)</b><small>Ethereum Network</small></span><svg class="ic" data-icon="arrow"></svg></button>
           </article>
@@ -170,18 +169,24 @@
 
     <!-- DEPOSIT -->
     <section class="page" id="page-deposit">
-      <div class="page-title"><div><h1>Deposit</h1><p>Add funds to your wallet. Your balance updates as soon as the payment is confirmed.</p></div></div>
+      <div class="page-title"><div><h1>Crypto Deposit</h1><p>Contact customer care to receive the correct wallet address before sending crypto.</p></div></div>
       <div class="two-col">
         <article class="panel">
-          <div class="tabs" id="depositTabs">
-            <button class="selected" data-method="paypal">Pay online</button><button data-method="usdt_trc20">USDT · TRC20</button><button data-method="usdc_erc20">USDC · ERC20</button>
+          <h2>Choose a cryptocurrency</h2>
+          <p class="sub">Customer care will provide the wallet address and network instructions.</p>
+          <button class="fund-row" data-deposit-request="usdt_trc20"><img src="images/icon-tron.png" alt="" class="blend" width="34" height="28"><span><b>USDT (TRC20)</b><small>Request deposit address</small></span><svg class="ic" data-icon="arrow"></svg></button>
+          <button class="fund-row" data-deposit-request="usdc_erc20"><img src="images/icon-eth.png" alt="" class="blend" width="28" height="30"><span><b>USDC (ERC20)</b><small>Request deposit address</small></span><svg class="ic" data-icon="arrow"></svg></button>
+          <div class="instructions">
+            <div class="grow"><b>Already received an address and sent your crypto?</b>
+              <p class="hint">Submit the amount and transaction hash below. Your deposit remains pending until an admin confirms it.</p>
+            </div>
           </div>
-          <div id="depositInstructions" class="instructions"></div>
           <form id="depositForm" class="form">
+            <label>Crypto network<select id="depositMethod"><option value="usdt_trc20">USDT · TRC20 (TRON)</option><option value="usdc_erc20">USDC · ERC20 (Ethereum)</option></select></label>
             <label>Amount<div class="amount-input"><span class="cur"></span><input id="depositAmount" type="text" inputmode="decimal" placeholder="0.00" required></div></label>
             <label id="depositRefWrap"><span id="depositRefLabel">Transaction hash (TXID)</span><input id="depositRef" type="text" maxlength="120" autocomplete="off" required></label>
             <button class="btn btn-gold full" type="submit" id="depositSubmit">Submit deposit</button>
-            <p class="hint" id="depositHint">Only submit a payment you have already made. Each code or hash can be used once.</p>
+            <p class="hint" id="depositHint">Only submit a payment you have already made. Each transaction hash can be used once.</p>
           </form>
         </article>
         <article class="panel">
