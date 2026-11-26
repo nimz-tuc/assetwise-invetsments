@@ -10,17 +10,13 @@
 ## How money moves (all real, nothing simulated)
 - **Deposit**: customers choose USDT (TRC20) or USDC (ERC20) and are redirected to Customer Care to request the correct wallet address. After sending crypto, they submit the amount and transaction hash. Deposits stay *pending* until an admin confirms them (Admin > Deposits & Withdrawals); admins can edit pending crypto deposit details before confirming. A transaction hash cannot be credited twice.
 - **Withdraw**: amount is taken from the wallet immediately and held. While pending, an admin can edit its amount, method, payout reference, and destination; amount changes are reconciled against the wallet. Admin marks it paid, or rejects it and the reserved amount returns to the wallet.
+- **Admin wallet credits**: an admin can add funds to a customer's wallet from Admin > Customers. Each credit is recorded as a transaction and in the audit log.
 - **Invest**: debits the wallet, locks the package terms. When the term ends the server pays principal + return into the wallet automatically (checked every minute).
 - **Customer care**: customers write in Support; admins reply in Admin > Customer Care; replies show in the customer's chat within seconds and on the bell.
 - Admin actions are recorded in the `audit_log` table.
 
-## PayPal withdrawals (USD)
-1. developer.paypal.com > Apps & Credentials: copy the Client ID and Secret (Sandbox tab to test, Live tab for real money).
-2. Set `PAYPAL_ENV` (`sandbox` or `live`, must match the keys), `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `PUBLIC_URL` (in `.env` locally, in the Render Environment tab online).
-3. Withdraw > PayPal: the customer gives their PayPal email, the amount is reserved, and an admin pays it from PayPal and clicks **Mark paid** (or **Reject** to refund the wallet).
-
 ## Crypto
-Deposits: USDT (TRC20) and USDC (ERC20). Customers request deposit addresses through Customer Care; send the correct address and network instructions in the reply. Do not ask customers to use an address from another network. Withdrawals support the same crypto networks.
+Deposits and withdrawals support USDT (TRC20) and USDC (ERC20). Deposit customers request addresses through Customer Care; provide the correct address and network instructions in the reply. Verify the destination network for all transfers.
 
 ## Opening the site on a phone / other devices
 You only need **one** tunnel, to port 5000 (the server serves both the website and the API). Don't use VS Code Live Server for this.

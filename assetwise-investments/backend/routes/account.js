@@ -151,7 +151,7 @@ router.post('/withdrawals', rateLimit({ windowMs: 60_000, max: 5, keyFn: r => St
   if (!amount) throw new HttpError(400, 'Enter a valid amount.');
   if (Number(amount) < cfg.MIN_WITHDRAWAL) throw new HttpError(400, `Minimum withdrawal is ${cfg.CURRENCY} ${cfg.MIN_WITHDRAWAL.toLocaleString('en-US')}.`);
   const destination = validateDestination(method, req.body?.destination);
-  if (!destination) throw new HttpError(400, method === 'paypal' ? 'Enter a valid PayPal email address.' : 'Enter a valid wallet address for that network.');
+  if (!destination) throw new HttpError(400, 'Enter a valid wallet address for that network.');
   const t = await tx(async client => {
     await L.debit(client, req.user.id, amount);
     return L.insertTx(client, {

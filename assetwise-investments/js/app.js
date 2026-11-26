@@ -214,11 +214,10 @@
   /* ---------------- withdraw ---------------- */
   function renderWithdrawForm() {
     const m = $('#withdrawMethod').value;
-    $('#withdrawDestLabel').textContent = m === 'paypal' ? 'PayPal email address' : m === 'usdt_trc20' ? 'TRON (TRC20) wallet address' : 'Ethereum (ERC20) wallet address (USDC)';
-    $('#withdrawDest').placeholder = m === 'paypal' ? 'you@example.com' : m === 'usdt_trc20' ? 'T...' : '0x...';
-    $('#withdrawDest').type = m === 'paypal' ? 'email' : 'text'; $('#withdrawDest').inputMode = m === 'paypal' ? 'email' : 'text';
-    $('#withdrawHint').textContent = m === 'paypal' ? 'Use the email of the PayPal account that should receive the money. Double-check it: payments to a wrong address cannot be recovered. The amount is reserved in your wallet while we process the request; if declined it is returned.'
-      : 'The amount is reserved in your wallet while we process the request. If a request is declined it is returned to your wallet.';
+    $('#withdrawDestLabel').textContent = m === 'usdt_trc20' ? 'TRON (TRC20) wallet address' : 'Ethereum (ERC20) wallet address (USDC)';
+    $('#withdrawDest').placeholder = m === 'usdt_trc20' ? 'T...' : '0x...';
+    $('#withdrawDest').type = 'text'; $('#withdrawDest').inputMode = 'text';
+    $('#withdrawHint').textContent = 'Double-check the network and wallet address before requesting a withdrawal. The amount is reserved while we process the request; if declined it is returned to your wallet.';
   }
   AW.loaders.withdraw = async () => {
     renderWithdrawForm();

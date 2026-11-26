@@ -198,12 +198,12 @@
 
     <!-- WITHDRAW -->
     <section class="page" id="page-withdraw">
-      <div class="page-title"><div><h1>Withdraw</h1><p>Move funds from your wallet to your PayPal account or a crypto wallet.</p></div></div>
+      <div class="page-title"><div><h1>Withdraw</h1><p>Withdraw funds from your wallet to a crypto wallet.</p></div></div>
       <div class="two-col">
         <article class="panel">
           <div class="balance-line"><small>Available to withdraw</small><strong id="withdrawBalance">—</strong></div>
           <form id="withdrawForm" class="form">
-            <label>Withdraw to<select id="withdrawMethod"><option value="paypal">PayPal</option><option value="usdt_trc20">USDT · TRC20 (TRON)</option><option value="usdc_erc20">USDC · ERC20 (Ethereum)</option></select></label>
+            <label>Withdraw to<select id="withdrawMethod"><option value="usdt_trc20">USDT · TRC20 (TRON)</option><option value="usdc_erc20">USDC · ERC20 (Ethereum)</option></select></label>
             <label><span id="withdrawDestLabel">TRON (TRC20) wallet address</span><input id="withdrawDest" type="text" maxlength="120" autocomplete="off" placeholder="T..." required></label>
             <label>Amount<div class="amount-input"><span class="cur"></span><input id="withdrawAmount" type="text" inputmode="decimal" placeholder="0.00" required></div></label>
             <button class="btn btn-gold full" type="submit">Request withdrawal</button>
@@ -317,7 +317,7 @@
         <p class="sub">Changes apply only while the withdrawal is pending. Adjusting the amount updates the customer's reserved wallet balance.</p>
         <form id="adminTxEditForm" class="form">
           <label>Amount<div class="amount-input"><span class="cur"></span><input id="adminTxEditAmount" type="text" inputmode="decimal" required></div></label>
-          <label>Payment method<select id="adminTxEditMethod" required><option value="paypal">PayPal</option><option value="usdt_trc20">USDT · TRC20</option><option value="usdc_erc20">USDC · ERC20</option></select></label>
+          <label>Payment method<select id="adminTxEditMethod" required><option value="usdt_trc20">USDT · TRC20</option><option value="usdc_erc20">USDC · ERC20</option></select></label>
           <label>Withdrawal destination<input id="adminTxEditDestination" type="text" maxlength="120" required></label>
           <label>Payout reference (optional)<input id="adminTxEditReference" type="text" maxlength="120"></label>
           <button class="btn btn-gold full" id="adminTxEditSave" type="submit">Save changes</button>

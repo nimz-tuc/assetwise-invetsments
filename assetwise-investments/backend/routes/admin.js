@@ -60,6 +60,28 @@ router.patch('/users/:id', async (req, res) => {
   res.json({ success: true, user: r });
 });
 
+router.post('/users/:id/wallet-credits', async (req, res) => {
+  const amount = parseAmount(req.body?.amount);
+  if (!amount) throw new HttpError(400, 'Enter a valid credit amount.');
+  const note = String(req.body?.note || '').trim().slice(0, 200);
+  const result = await tx(async client => {
+    const user = await client.query(`SELECT id, role FROM users WHERE id = $1 FOR UPDATE`, [req.params.id]);
+    if (!user.rowCount) throw new HttpError(404, 'User not found.');
+    if (user.rows[0].role === 'admin') throw new HttpError(400, 'Wallet credits can only be added to customer accounts.');
+
+    const balance = await L.credit(client, user.rows[0].id, amount);
+    await L.insertTx(client, {
+      user_id: user.rows[0].id, type: 'adjustment', amount, status: 'completed', method: 'admin',
+      note: note ? `Admin wallet credit: ${note}` : 'Admin wallet credit',
+    });
+    await L.audit(client, req.user.id, 'wallet.credit', 'user', user.rows[0].id, {
+      amount, currency: cfg.CURRENCY, balance, note: note || null,
+    });
+    return balance;
+  });
+  res.json({ success: true, message: 'Customer wallet credited.', balance: Number(result) });
+});
+
 /* ---------- Deposits & withdrawals review ---------- */
 router.get('/transactions', async (req, res) => {
   const type = ['deposit', 'withdrawal', 'investment', 'payout'].includes(req.query.type) ? req.query.type : null;
@@ -79,9 +101,9 @@ router.put('/transactions/:id', async (req, res) => {
   const method = b.method;
   const destination = validateDestination(method, b.destination);
   const providerRef = String(b.provider_ref || '').trim();
-  if (!WITHDRAW_METHODS.includes(method)) throw new HttpError(400, 'Choose a valid withdrawal method.');
+  if (!WITHDRAW_METHODS.includes(method)) throw new HttpError(400, 'Choose a valid crypto withdrawal method.');
   if (!amount || Number(amount) < cfg.MIN_WITHDRAWAL) throw new HttpError(400, `Withdrawal amount must be at least ${cfg.CURRENCY} ${cfg.MIN_WITHDRAWAL.toLocaleString('en-US')}.`);
-  if (!destination) throw new HttpError(400, method === 'paypal' ? 'Enter a valid PayPal email address.' : 'Enter a valid wallet address for that network.');
+  if (!destination) throw new HttpError(400, 'Enter a valid wallet address for that network.');
   if (providerRef.length > 120) throw new HttpError(400, 'The payout reference can be up to 120 characters.');
 
   const updated = await tx(async client => {
