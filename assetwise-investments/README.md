@@ -10,7 +10,7 @@
 ## How money moves (all real, nothing simulated)
 - **Deposit**: customers choose USDT (TRC20) or USDC (ERC20) and are redirected to Customer Care to request the correct wallet address. After sending crypto, they submit the amount and transaction hash. Deposits stay *pending* until an admin confirms them (Admin > Deposits & Withdrawals); admins can edit pending crypto deposit details before confirming. A transaction hash cannot be credited twice.
 - **Withdraw**: amount is taken from the wallet immediately and held. While pending, an admin can edit its amount, method, payout reference, and destination; amount changes are reconciled against the wallet. Admin marks it paid, or rejects it and the reserved amount returns to the wallet.
-- **Admin wallet credits**: an admin can add funds to a customer's wallet from Admin > Customers. Each credit is recorded as a transaction and in the audit log.
+- **Admin wallet balance**: an admin can set a customer's balance from Admin > Customers. Increases and decreases are recorded as signed adjustment transactions and in the audit log.
 - **Invest**: debits the wallet, locks the package terms. When the term ends the server pays principal + return into the wallet automatically (checked every minute).
 - **Customer care**: customers write in Support; admins reply in Admin > Customer Care; replies show in the customer's chat within seconds and on the bell.
 - Admin actions are recorded in the `audit_log` table.

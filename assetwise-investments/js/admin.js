@@ -166,25 +166,25 @@
   async function loadUsers() {
     const r = await api('/admin/users?q=' + encodeURIComponent($('#adminUserSearch').value.trim()));
     $('#adminUserRows').innerHTML = r.users.length ? r.users.map(u => `<tr><td>${esc(u.full_name)}${u.role === 'admin' ? ' <span class="badge">admin</span>' : ''}</td><td>${esc(u.email)}</td><td>${esc(u.phone || '—')}</td>
-      <td>${money(u.balance)}</td><td>${money(u.invested)}</td><td>${esc(AW.date(u.created_at))}</td><td><span class="badge ${u.status === 'active' ? '' : 'rejected'}">${u.status === 'active' ? 'Active' : 'Suspended'}</span></td>
-      <td>${u.role === 'admin' ? '' : `<button class="btn btn-gold btn-sm" data-uid="${esc(u.id)}" data-wallet-credit="1">Add funds</button> <button class="btn btn-outline btn-sm" data-uid="${esc(u.id)}" data-status="${u.status === 'active' ? 'suspended' : 'active'}">${u.status === 'active' ? 'Suspend' : 'Reactivate'}</button>`}</td></tr>`).join('')
+      <td>${money(u.balance)} ${u.role === 'admin' ? '' : `<button class="btn btn-outline btn-sm" data-uid="${esc(u.id)}" data-balance="${esc(Number(u.balance).toFixed(2))}" data-wallet-edit="1">Edit</button>`}</td><td>${money(u.invested)}</td><td>${esc(AW.date(u.created_at))}</td><td><span class="badge ${u.status === 'active' ? '' : 'rejected'}">${u.status === 'active' ? 'Active' : 'Suspended'}</span></td>
+      <td>${u.role === 'admin' ? '' : `<button class="btn btn-outline btn-sm" data-uid="${esc(u.id)}" data-status="${u.status === 'active' ? 'suspended' : 'active'}">${u.status === 'active' ? 'Suspend' : 'Reactivate'}</button>`}</td></tr>`).join('')
       : `<tr><td colspan="8" class="empty">No customers found.</td></tr>`;
   }
   AW.loaders['admin-users'] = loadUsers;
   let st; $('#adminUserSearch').addEventListener('input', () => { clearTimeout(st); st = setTimeout(() => loadUsers().catch(() => {}), 300); });
   $('#adminUserRows').addEventListener('click', async e => {
     const b = e.target.closest('[data-uid]'); if (!b) return;
-    if (b.dataset.walletCredit) {
-      const amount = prompt(`Amount to add (${AW.currency}):`);
-      if (amount === null) return;
-      const note = prompt('Reason for this wallet credit (optional):', '');
+    if (b.dataset.walletEdit) {
+      const balance = prompt(`New wallet balance (${AW.currency}):`, b.dataset.balance);
+      if (balance === null) return;
+      const note = prompt('Reason for this balance change (optional):', '');
       if (note === null) return;
-      if (!confirm(`Add ${AW.currency} ${amount.trim()} to this customer's wallet?`)) return;
+      if (!confirm(`Set this customer's wallet balance to ${AW.currency} ${balance.trim()}?`)) return;
       try {
-        const r = await api(`/admin/users/${encodeURIComponent(b.dataset.uid)}/wallet-credits`, {
-          method: 'POST', body: { amount: amount.trim(), note: note.trim() },
+        const r = await api(`/admin/users/${encodeURIComponent(b.dataset.uid)}/wallet-balance`, {
+          method: 'PUT', body: { balance: balance.trim(), note: note.trim() },
         });
-        AW.toast(`${r.message} New balance: ${money(r.balance)}.`);
+        AW.toast(`${r.message} Balance: ${money(r.balance)}.`);
         await loadUsers();
       } catch (err) { AW.toast(err.message, true); }
       return;

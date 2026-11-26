@@ -60,26 +60,39 @@ router.patch('/users/:id', async (req, res) => {
   res.json({ success: true, user: r });
 });
 
-router.post('/users/:id/wallet-credits', async (req, res) => {
-  const amount = parseAmount(req.body?.amount);
-  if (!amount) throw new HttpError(400, 'Enter a valid credit amount.');
+router.put('/users/:id/wallet-balance', async (req, res) => {
+  const rawBalance = String(req.body?.balance ?? '').trim();
+  if (!/^\d{1,10}(\.\d{1,2})?$/.test(rawBalance) || Number(rawBalance) > cfg.MAX_AMOUNT) {
+    throw new HttpError(400, 'Enter a valid wallet balance.');
+  }
+  const newBalance = Number(rawBalance).toFixed(2);
   const note = String(req.body?.note || '').trim().slice(0, 200);
   const result = await tx(async client => {
     const user = await client.query(`SELECT id, role FROM users WHERE id = $1 FOR UPDATE`, [req.params.id]);
     if (!user.rowCount) throw new HttpError(404, 'User not found.');
-    if (user.rows[0].role === 'admin') throw new HttpError(400, 'Wallet credits can only be added to customer accounts.');
+    if (user.rows[0].role === 'admin') throw new HttpError(400, 'Wallet balances can only be edited for customer accounts.');
 
-    const balance = await L.credit(client, user.rows[0].id, amount);
-    await L.insertTx(client, {
-      user_id: user.rows[0].id, type: 'adjustment', amount, status: 'completed', method: 'admin',
-      note: note ? `Admin wallet credit: ${note}` : 'Admin wallet credit',
-    });
-    await L.audit(client, req.user.id, 'wallet.credit', 'user', user.rows[0].id, {
-      amount, currency: cfg.CURRENCY, balance, note: note || null,
-    });
-    return balance;
+    const currentBalance = await L.lockWallet(client, user.rows[0].id);
+    const oldCents = Math.round(Number(currentBalance) * 100);
+    const newCents = Math.round(Number(newBalance) * 100);
+    const deltaCents = newCents - oldCents;
+    if (deltaCents > 0) await L.credit(client, user.rows[0].id, (deltaCents / 100).toFixed(2));
+    else if (deltaCents < 0) await L.debit(client, user.rows[0].id, (-deltaCents / 100).toFixed(2));
+
+    if (deltaCents !== 0) {
+      const delta = (deltaCents / 100).toFixed(2);
+      const description = note ? `Admin wallet balance edit: ${note}` : 'Admin wallet balance edit';
+      await L.insertTx(client, {
+        user_id: user.rows[0].id, type: 'adjustment', amount: delta, status: 'completed', method: 'admin',
+        note: description,
+      });
+      await L.audit(client, req.user.id, 'wallet.balance.set', 'user', user.rows[0].id, {
+        from: currentBalance, to: newBalance, delta, currency: cfg.CURRENCY, note: note || null,
+      });
+    }
+    return newBalance;
   });
-  res.json({ success: true, message: 'Customer wallet credited.', balance: Number(result) });
+  res.json({ success: true, message: 'Customer wallet balance updated.', balance: Number(result) });
 });
 
 /* ---------- Deposits & withdrawals review ---------- */
